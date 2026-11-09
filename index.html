@@ -668,7 +668,17 @@ function assignPieColors(rows){
   });
   let pi=0;
   list.forEach(function(x){
-    if(!x.color){do{x.color=PIE_COLORS[pi++%PIE_COLORS.length];}while(used.has(x.color));used.add(x.color);}
+    if(x.color)return;
+    let c="";
+    for(let t=0;t<PIE_COLORS.length;t++){
+      const cand=PIE_COLORS[(pi+t)%PIE_COLORS.length];
+      if(!used.has(cand)){c=cand;pi+=t+1;break;}
+    }
+    // Het bang mau (tren 12 danh muc can gan mau) thi xoay mau HSL thay vi
+    // quay vong mai trong bang mau — tranh treo trang. Tang pi moi lan de
+    // mau HSL tiep theo xoay sang mot sac khac.
+    if(!c){c="hsl("+((pi*47)%360)+" 70% 50%)";pi++;}
+    x.color=c;used.add(c);
   });
   return list;
 }
