@@ -25,7 +25,7 @@ Tóm tắt:
 
 1. **D1:** Storage & Databases → D1 → Create database, tên `mymoney-db`.
    Mở database → tab Console, dán toàn bộ file `schema.sql` trong gói
-   `mymoney-cloudflare` rồi Run (tạo 11 bảng).
+   `mymoney-cloudflare` rồi Run (tạo 12 bảng).
 2. **Worker:** Workers & Pages → Create → Create Worker, tên `mymoney-api`,
    Deploy → Edit code, dán toàn bộ file `worker.js` trong gói
    `mymoney-cloudflare`, Save and deploy.
@@ -50,10 +50,12 @@ production nên đặt đúng `https://dhkdvtqn.github.io`.
 ## 4. Tài khoản
 
 - **Tài khoản đầu tiên đăng ký sẽ tự thành admin** (không có mật khẩu
-  mặc định, không có tài khoản demo). Hãy đăng ký bằng email của anh trước.
+  mặc định, không có tài khoản demo). Đăng ký bằng **email hoặc số điện
+  thoại** — sau này chính là tài khoản đăng nhập.
 - Đăng nhập hết hạn sau 12 giờ thì đăng nhập lại.
-- Quên mật khẩu: dùng link trong email reset (cần cấu hình `RESEND_API_KEY`
-  ở Worker — xem README của gói Worker; nếu chưa cấu hình, link reset sẽ
-  không gửi được email).
+- Quên mật khẩu: nhập email/SĐT đã đăng ký rồi **trả lời đúng tất cả câu hỏi
+  bí mật** (đặt tối thiểu 3 câu khi đăng ký) là được đặt mật khẩu mới — không
+  gửi email. Tài khoản cũ chưa có câu hỏi thì vào **Cài đặt → Câu hỏi bí mật**
+  để đặt trước.
 - Số tiền gửi lên API luôn là số nguyên đồng (không dùng số thập phân).
 - Múi giờ: Asia/Ho_Chi_Minh. Tiền tệ mặc định: VND.

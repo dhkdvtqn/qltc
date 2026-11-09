@@ -119,29 +119,49 @@ canvas{width:100%;height:180px;display:block}
   <div class="tabs"><button id="tabLogin" class="on" type="button">Đăng nhập</button><button id="tabRegister" type="button">Đăng ký</button></div>
   <div class="card">
     <div id="loginForm">
-      <label>Email</label><input id="loginEmail" type="email" autocomplete="email" placeholder="email@vd.com">
+      <label>Email hoặc số điện thoại</label><input id="loginIdent" type="text" autocomplete="username" placeholder="email@vd.com hoặc 0987654321">
       <label>Mật khẩu</label><input id="loginPass" type="password" autocomplete="current-password" placeholder="Mật khẩu">
       <div style="margin-top:14px"><button class="btn primary block" id="btnLogin" type="button">Đăng nhập</button></div>
       <button class="linkbtn" id="linkForgot" type="button">Quên mật khẩu?</button>
     </div>
     <div id="registerForm" class="hidden">
       <label>Họ tên</label><input id="regName" type="text" placeholder="Nguyễn Văn A">
-      <label>Email</label><input id="regEmail" type="email" autocomplete="email" placeholder="email@vd.com">
+      <label>Email hoặc số điện thoại đăng ký</label><input id="regIdent" type="text" autocomplete="username" placeholder="email@vd.com hoặc 0987654321">
       <label>Mật khẩu (tối thiểu 6 ký tự)</label><input id="regPass" type="password" autocomplete="new-password" placeholder="Mật khẩu">
+      <h3 style="margin-top:16px">❓ Câu hỏi bí mật <span class="muted" style="font-weight:normal">(tối thiểu 3 câu — dùng để đặt lại mật khẩu khi quên)</span></h3>
+      <p class="muted">Chọn câu gợi ý hoặc tự gõ câu hỏi của anh. Trả lời không phân biệt hoa/thường và dấu.</p>
+      <div id="regQA"></div>
+      <button class="linkbtn" id="btnAddRegQ" type="button">＋ Thêm câu hỏi (tối đa 5)</button>
       <div style="margin-top:14px"><button class="btn primary block" id="btnRegister" type="button">Đăng ký</button></div>
       <p class="muted" style="margin-top:10px">Tài khoản đầu tiên đăng ký sẽ tự thành <b>admin</b>. Không có tài khoản demo.</p>
     </div>
     <div id="forgotForm" class="hidden">
-      <label>Email đã đăng ký</label><input id="forgotEmail" type="email" placeholder="email@vd.com">
-      <div style="margin-top:14px"><button class="btn primary block" id="btnForgot" type="button">Gửi link đặt lại mật khẩu</button></div>
-      <p class="muted" style="margin-top:10px">Nếu không nhận được email, nhờ admin đặt lại mật khẩu giúp trong mục Quản trị.</p>
+      <div id="forgotStep1">
+        <label>Email hoặc số điện thoại đã đăng ký</label><input id="forgotIdent" type="text" placeholder="email@vd.com hoặc 0987654321">
+        <div style="margin-top:14px"><button class="btn primary block" id="btnForgotQ" type="button">Lấy câu hỏi bí mật</button></div>
+      </div>
+      <div id="forgotStep2" class="hidden">
+        <p class="muted">Trả lời đúng <b>tất cả</b> câu hỏi bí mật để đặt lại mật khẩu.</p>
+        <div id="forgotQA"></div>
+        <div style="margin-top:14px"><button class="btn primary block" id="btnForgotVerify" type="button">Xác nhận câu trả lời</button></div>
+      </div>
       <button class="linkbtn" id="linkBackLogin" type="button">← Quay lại đăng nhập</button>
     </div>
     <div id="resetForm" class="hidden">
-      <p class="muted">Đặt mật khẩu mới cho tài khoản của anh (link có hiệu lực 1 giờ).</p>
+      <p class="muted">Đặt mật khẩu mới cho tài khoản của anh.</p>
       <label>Mật khẩu mới (tối thiểu 6 ký tự)</label><input id="resetPass" type="password" autocomplete="new-password" placeholder="Mật khẩu mới">
       <div style="margin-top:14px"><button class="btn primary block" id="btnReset" type="button">Đặt lại mật khẩu</button></div>
     </div>
+    <datalist id="secQSuggest">
+      <option value="Tên trường tiểu học của anh là gì?"></option>
+      <option value="Tên thú cưng đầu tiên của anh là gì?"></option>
+      <option value="Món ăn yêu thích của anh là gì?"></option>
+      <option value="Quê quán của mẹ anh ở đâu?"></option>
+      <option value="Tên người bạn thân nhất thời đi học?"></option>
+      <option value="Anh thích đi du lịch ở đâu nhất?"></option>
+      <option value="Tên bộ phim anh thích nhất?"></option>
+      <option value="Màu sắc yêu thích của anh là gì?"></option>
+    </datalist>
     <p id="authMsg" class="muted" style="margin-top:10px"></p>
   </div>
 </div>
@@ -264,6 +284,14 @@ canvas{width:100%;height:180px;display:block}
         <div style="margin-top:12px"><button class="btn primary block" id="btnChangePass" type="button">Đổi mật khẩu</button></div>
         <p id="setPassMsg" class="muted" style="margin-top:8px"></p>
       </div>
+      <div class="card"><h3>❓ Câu hỏi bí mật</h3>
+        <p class="muted" id="secQStatus">Dùng để đặt lại mật khẩu khi quên — trả lời đúng tất cả câu hỏi mới được đặt mật khẩu mới.</p>
+        <div id="secQA"></div>
+        <button class="linkbtn" id="btnAddSecQ" type="button">＋ Thêm câu hỏi (tối đa 5)</button>
+        <label>Mật khẩu hiện tại (để xác nhận)</label><input id="secQPass" type="password" autocomplete="current-password" placeholder="Mật khẩu hiện tại">
+        <div style="margin-top:12px"><button class="btn primary block" id="btnSaveSecQ" type="button">Lưu câu hỏi bí mật</button></div>
+        <p id="secQMsg" class="muted" style="margin-top:8px"></p>
+      </div>
       <div class="card"><h3>Hồ sơ</h3>
         <label>Họ tên</label><input id="setName">
         <label>Tiền tệ</label><select id="setCurrency"><option value="VND">VND</option><option value="USD">USD</option></select>
@@ -275,8 +303,8 @@ canvas{width:100%;height:180px;display:block}
 
     <section id="view-admin" class="view hidden">
       <h2>🛡️ Quản trị</h2>
-      <div class="card"><h3>Thống kê hệ thống</h3><div id="adminStats" class="muted">—</div><p id="adminEmail" class="muted" style="margin-top:8px"></p></div>
-      <div class="card"><h3>Người dùng</h3><p class="muted">Admin bấm “Đặt lại MK” để đặt mật khẩu mới cho user (dùng khi user quên mật khẩu mà email chưa gửi được).</p><div id="adminUsers"></div></div>
+      <div class="card"><h3>Thống kê hệ thống</h3><div id="adminStats" class="muted">—</div></div>
+      <div class="card"><h3>Người dùng</h3><p class="muted">Admin bấm “Đặt lại MK” để đặt mật khẩu mới cho user (dùng khi user quên mật khẩu mà không trả lời được câu hỏi bí mật).</p><div id="adminUsers"></div></div>
     </section>
   </div>
 
@@ -431,29 +459,81 @@ function showAuth(){
   if(params.get("token")){show("loginForm",false);show("resetForm",true);}
 }
 
-/* ================= Auth ================= */
+/* ================= Auth: cau hoi bi mat ================= */
+// 1 dong cau hoi + tra loi (dung chung cho dang ky + cai dat).
+function qaRowHTML(prefix,i,q){
+  return '<div class="qa-row" data-i="'+i+'">'
+    +'<label>Câu hỏi '+(i+1)+'</label><input data-q type="text" list="secQSuggest" placeholder="VD: Tên trường tiểu học của anh là gì?" value="'+esc(q||"")+'">'
+    +'<label>Câu trả lời '+(i+1)+'</label><input data-a type="text" autocomplete="off" placeholder="Câu trả lời">'
+    +'</div>';
+}
+function renderQARows(prefix,questions,min){
+  const box=$(prefix);if(!box)return;
+  const n=Math.max(min||3,(questions||[]).length);
+  let h="";for(let i=0;i<n;i++)h+=qaRowHTML(prefix,i,(questions||[])[i]||"");
+  box.innerHTML=h;
+}
+function addQARow(prefix,max){
+  const box=$(prefix);if(!box)return;
+  const n=box.querySelectorAll(".qa-row").length;
+  if(n>=(max||5)){toast("Tối đa 5 câu hỏi");return;}
+  box.insertAdjacentHTML("beforeend",qaRowHTML(prefix,n,""));
+}
+function collectQA(prefix){
+  const box=$(prefix);if(!box)return [];
+  const out=[];
+  box.querySelectorAll(".qa-row").forEach(function(r){
+    const q=r.querySelector("[data-q]").value.trim(),a=r.querySelector("[data-a]").value.trim();
+    if(q||a)out.push({question:q,answer:a});
+  });
+  return out;
+}
 function bindAuth(){
+  renderQARows("regQA",[],3);
   $("tabLogin").onclick=function(){$("tabLogin").classList.add("on");$("tabRegister").classList.remove("on");show("loginForm",true);show("registerForm",false);show("forgotForm",false);};
   $("tabRegister").onclick=function(){$("tabRegister").classList.add("on");$("tabLogin").classList.remove("on");show("loginForm",false);show("registerForm",true);show("forgotForm",false);};
-  $("linkForgot").onclick=function(){show("loginForm",false);show("forgotForm",true);};
+  $("linkForgot").onclick=function(){show("loginForm",false);show("forgotForm",true);show("forgotStep1",true);show("forgotStep2",false);};
   $("linkBackLogin").onclick=function(){show("forgotForm",false);show("loginForm",true);};
+  $("btnAddRegQ").onclick=function(){addQARow("regQA",5);};
   $("btnLogin").onclick=async function(){
-    try{const d=await api("/api/auth/login",{method:"POST",body:{email:$("loginEmail").value.trim(),password:$("loginPass").value}});
+    try{const d=await api("/api/auth/login",{method:"POST",body:{identifier:$("loginIdent").value.trim(),password:$("loginPass").value}});
       localStorage.setItem(LS_TOKEN,d.token);localStorage.setItem(LS_USER,JSON.stringify(d.user));state.user=d.user;toast("Đăng nhập thành công");showApp(true);
     }catch(e){$("authMsg").textContent=e.message;}
   };
   $("btnRegister").onclick=async function(){
-    try{const d=await api("/api/auth/register",{method:"POST",body:{email:$("regEmail").value.trim(),password:$("regPass").value,full_name:$("regName").value.trim(),currency:"VND",timezone:"Asia/Ho_Chi_Minh"}});
+    const qs=collectQA("regQA");
+    if(qs.length<3){$("authMsg").textContent="Nhập ít nhất 3 câu hỏi bí mật và câu trả lời.";return;}
+    try{const d=await api("/api/auth/register",{method:"POST",body:{identifier:$("regIdent").value.trim(),password:$("regPass").value,full_name:$("regName").value.trim(),questions:qs,currency:"VND",timezone:"Asia/Ho_Chi_Minh"}});
       localStorage.setItem(LS_TOKEN,d.token);localStorage.setItem(LS_USER,JSON.stringify(d.user));state.user=d.user;toast("Đăng ký thành công — tài khoản đầu tiên là Admin");showApp(true);
     }catch(e){$("authMsg").textContent=e.message;}
   };
-  $("btnForgot").onclick=async function(){
-    try{const d=await api("/api/auth/forgot-password",{method:"POST",body:{email:$("forgotEmail").value.trim()}});$("authMsg").textContent=d.message||"Nếu email tồn tại, link đặt lại mật khẩu đã được gửi.";}
-    catch(e){$("authMsg").textContent=e.message;}
+  // Quen mat khau — buoc 1: lay cau hoi; buoc 2: tra loi dung het -> nhan token -> dat MK moi.
+  $("btnForgotQ").onclick=async function(){
+    const ident=$("forgotIdent").value.trim();
+    if(!ident){$("authMsg").textContent="Nhập email hoặc số điện thoại đã đăng ký.";return;}
+    try{
+      const d=await api("/api/auth/forgot-questions",{method:"POST",body:{identifier:ident}});
+      state.forgotIdent=ident;state.forgotQuestions=d.questions||[];
+      $("forgotQA").innerHTML=state.forgotQuestions.map(function(q,i){
+        return '<div class="qa-row"><label>'+esc(q)+'</label><input data-fa="'+i+'" type="text" autocomplete="off" placeholder="Câu trả lời"></div>';
+      }).join("");
+      show("forgotStep1",false);show("forgotStep2",true);$("authMsg").textContent="";
+    }catch(e){$("authMsg").textContent=e.message;}
+  };
+  $("btnForgotVerify").onclick=async function(){
+    const answers=state.forgotQuestions.map(function(_,i){
+      const el=$("forgotQA").querySelector('[data-fa="'+i+'"]');return el?el.value.trim():"";
+    });
+    try{
+      const d=await api("/api/auth/forgot-verify",{method:"POST",body:{identifier:state.forgotIdent,answers:answers}});
+      state.resetToken=d.reset_token;
+      show("forgotForm",false);show("resetForm",true);$("authMsg").textContent="Trả lời đúng — nhập mật khẩu mới bên dưới.";
+    }catch(e){$("authMsg").textContent=e.message;}
   };
   $("btnReset").onclick=async function(){
-    const t=new URLSearchParams(location.search).get("token")||"";
-    try{await api("/api/auth/reset-password",{method:"POST",body:{token:t,password:$("resetPass").value}});toast("Đặt lại mật khẩu xong, mời đăng nhập");history.replaceState(null,"",location.pathname);show("resetForm",false);show("loginForm",true);}
+    const t=state.resetToken||new URLSearchParams(location.search).get("token")||"";
+    if(!t){$("authMsg").textContent="Phiên đặt lại mật khẩu đã hết — bấm Quên mật khẩu? để làm lại.";return;}
+    try{await api("/api/auth/reset-password",{method:"POST",body:{token:t,password:$("resetPass").value}});toast("Đặt lại mật khẩu xong, mời đăng nhập");state.resetToken="";history.replaceState(null,"",location.pathname);show("resetForm",false);show("loginForm",true);}
     catch(e){$("authMsg").textContent=e.message;}
   };
 }
@@ -724,7 +804,6 @@ async function loadAdmin(){
   try{
     const s=await api("/api/admin/stats");
     $("adminStats").textContent="Database: "+esc(s.database||"mymoney-db")+" • Người dùng: "+(s.tables.users||0)+" • Ví: "+(s.tables.accounts||0)+" • Giao dịch: "+(s.tables.transactions||0)+" • Ngân sách: "+(s.tables.budgets||0)+" • Mục tiêu: "+(s.tables.goals||0);
-    try{const e=await api("/api/admin/email-status");$("adminEmail").textContent=e.configured?("Email reset mật khẩu: đã cấu hình (gửi từ "+e.from+")"):("Email reset mật khẩu: CHƯA cấu hình — user quên mật khẩu thì admin đặt lại MK ở dưới, hoặc cấu hình Resend theo README.");}catch(err){$("adminEmail").textContent="";}
     const u=await api("/api/admin/users");
     $("adminUsers").innerHTML=(u.users||[]).map(function(x){
       return '<div class="list-item"><span class="ic">👤</span><div class="mid"><div class="t">'+esc(x.full_name||x.email)+'</div><div class="s">'+esc(x.email)+" • "+esc(x.role)+" • "+(x.tx_count||0)+" giao dịch • "+esc(x.status)+'</div></div>'+(x.id!==state.user.id?'<button class="btn small" data-lock="'+x.id+'" data-st="'+x.status+'">'+(x.status==="active"?"Khóa":"Mở khóa")+'</button><button class="btn small" data-reset="'+x.id+'">Đặt lại MK</button>':"")+'</div>';}).join("");
@@ -744,6 +823,26 @@ function bindSettings(){
     catch(e){toast(e.message);}
   };
   $("btnLogout").onclick=function(){logout(false);toast("Đã đăng xuất");};
+  $("btnAddSecQ").onclick=function(){addQARow("secQA",5);};
+  $("btnSaveSecQ").onclick=async function(){
+    const qs=collectQA("secQA");
+    if(qs.length<3){$("secQMsg").textContent="Nhập ít nhất 3 câu hỏi bí mật và câu trả lời.";return;}
+    const pw=$("secQPass").value;
+    if(!pw){$("secQMsg").textContent="Nhập mật khẩu hiện tại để xác nhận.";return;}
+    try{await api("/api/me/security-questions",{method:"POST",body:{questions:qs,current_password:pw}});
+      $("secQMsg").textContent="Đã lưu câu hỏi bí mật.";$("secQPass").value="";toast("Đã lưu câu hỏi bí mật");loadSecQ();}
+    catch(e){$("secQMsg").textContent=e.message;}
+  };
+  loadSecQ();
+}
+async function loadSecQ(){
+  try{
+    const d=await api("/api/me/security-questions");
+    $("secQStatus").textContent=d.has
+      ?("Đã đặt "+d.questions.length+" câu hỏi bí mật — sửa lại câu hỏi/câu trả lời ở dưới rồi bấm Lưu (cần nhập mật khẩu hiện tại).")
+      :("⚠️ Tài khoản chưa đặt câu hỏi bí mật — đặt ngay ở dưới, không thì quên mật khẩu sẽ không tự đặt lại được.");
+    renderQARows("secQA",d.questions||[],3);
+  }catch(e){$("secQStatus").textContent="Không tải được câu hỏi bí mật.";}
 }
 
 /* ================= Form giao dịch / các nút ================= */
