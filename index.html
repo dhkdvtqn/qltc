@@ -212,11 +212,16 @@ canvas{width:100%;height:180px;display:block}
     <section id="view-categories" class="view hidden">
       <h2>Danh mục thu – chi</h2>
       <div class="card"><div id="catList"></div></div>
-      <div class="card"><h3>Thêm danh mục</h3>
+      <div class="card"><h3 id="catFormTitle">Thêm danh mục</h3>
         <label>Tên danh mục</label><input id="newCatName" placeholder="VD: Cà phê, Tiền học con">
         <label>Loại</label><select id="newCatKind"><option value="expense">Chi</option><option value="income">Thu</option></select>
+        <label>Biểu tượng (emoji)</label><input id="newCatIcon" placeholder="🏷️" maxlength="4">
+        <label>Màu</label><input id="newCatColor" type="color" value="#64748B" style="padding:4px">
         <label>Danh mục cha (để trống = danh mục gốc)</label><select id="newCatParent"><option value="">— Không có —</option></select>
         <div style="margin-top:14px"><button class="btn primary block" id="btnAddCat" type="button">Thêm danh mục</button></div>
+        <div id="catEditBtns" class="hidden" style="margin-top:14px"><button class="btn primary block" id="btnSaveCat" type="button">Lưu thay đổi</button>
+        <button class="btn block" id="btnCancelCat" type="button" style="margin-top:8px">Hủy sửa</button></div>
+        <p class="muted" id="catFormNote" style="margin-top:8px">Loại Thu/Chi không đổi được sau khi tạo (vì giao dịch và ngân sách đang dùng loại này để tổng hợp).</p>
       </div>
     </section>
 
@@ -671,17 +676,59 @@ async function loadAccounts(){
 }
 
 /* ================= Danh mục ================= */
+let editingCatId=null;
+function catDescendants(id){
+  const out=new Set();let grew=true;
+  while(grew){grew=false;state.categories.forEach(function(c){
+    if(c.parent_id&&(String(c.parent_id)===String(id)||out.has(String(c.parent_id)))&&!out.has(String(c.id))){out.add(String(c.id));grew=true;}
+  });}
+  return out;
+}
+function fillCatParentOptions(excludeId){
+  const parent=$("newCatParent");if(!parent)return;
+  const bad=excludeId?catDescendants(excludeId):new Set();
+  if(excludeId)bad.add(String(excludeId));
+  parent.innerHTML='<option value="">— Không có —</option>'+state.categories
+    .filter(function(c){return !bad.has(String(c.id));})
+    .map(function(c){return '<option value="'+c.id+'">'+esc(c.name)+" ("+(c.kind==="income"?"Thu":"Chi")+")</option>";}).join("");
+}
+function resetCatForm(){
+  editingCatId=null;
+  $("catFormTitle").textContent="Thêm danh mục";
+  $("newCatName").value="";$("newCatKind").value="expense";$("newCatKind").disabled=false;
+  $("newCatIcon").value="";$("newCatIcon").placeholder="🏷️";$("newCatColor").value="#64748B";
+  show("btnAddCat",true);show("catEditBtns",false);
+  fillCatParentOptions(null);
+}
+function startEditCat(c){
+  editingCatId=c.id;
+  $("catFormTitle").textContent="Sửa danh mục: "+c.name;
+  $("newCatName").value=c.name;$("newCatKind").value=c.kind;$("newCatKind").disabled=true;
+  $("newCatIcon").value=c.icon||"";$("newCatColor").value=c.color||"#64748B";
+  fillCatParentOptions(c.id);
+  $("newCatParent").value=c.parent_id?String(c.parent_id):"";
+  show("btnAddCat",false);show("catEditBtns",true);
+  $("catFormTitle").scrollIntoView({behavior:"smooth",block:"center"});
+}
 async function loadCategories(){
   try{await loadBase();
     function render(kind,title){
       const list=state.categories.filter(function(c){return c.kind===kind;});
       return "<h3>"+title+"</h3>"+(list.length?list.map(function(c){
         const p=c.parent_id?catName(c.parent_id)+" › ":"";
-        return '<div class="list-item"><span class="ic" style="background:'+esc(c.color||"#EFF6FF")+'22">'+esc(c.icon||"🏷️")+'</span><div class="mid"><div class="t">'+esc(p+c.name)+'</div><div class="s">'+(c.is_system?"Danh mục mẫu":"Tự tạo")+'</div></div><button class="btn small danger" data-id="'+c.id+'">Xóa</button></div>';}).join(""):'<p class="muted">Chưa có.</p>');
+        return '<div class="list-item"><span class="ic" style="background:'+esc(c.color||"#EFF6FF")+'22">'+esc(c.icon||"🏷️")+'</span><div class="mid"><div class="t">'+esc(p+c.name)+'</div><div class="s">'+(c.is_system?"Danh mục mẫu":"Tự tạo")+'</div></div><button class="btn small" data-edit="'+c.id+'">Sửa</button><button class="btn small danger" data-id="'+c.id+'">Xóa</button></div>';}).join(""):'<p class="muted">Chưa có.</p>');
     }
     $("catList").innerHTML=render("expense","Chi")+render("income","Thu");
-    $("catList").querySelectorAll("button[data-id]").forEach(function(b){b.onclick=async function(){if(!confirm("Xóa danh mục này? Giao dịch cũ sẽ mất danh mục."))return;try{await api("/api/categories/"+b.dataset.id,{method:"DELETE"});toast("Đã xóa");loadCategories();}catch(e){toast(e.message);}};});
+    $("catList").querySelectorAll("button[data-edit]").forEach(function(b){b.onclick=function(){
+      const c=state.categories.find(function(x){return String(x.id)===String(b.dataset.edit);});
+      if(c)startEditCat(c);
+    };});
+    $("catList").querySelectorAll("button[data-id]").forEach(function(b){b.onclick=async function(){if(!confirm("Xóa danh mục này? Giao dịch cũ sẽ mất danh mục."))return;try{await api("/api/categories/"+b.dataset.id,{method:"DELETE"});toast("Đã xóa");if(String(editingCatId)===String(b.dataset.id))resetCatForm();loadCategories();}catch(e){toast(e.message);}};});
     fillAccountSelects();
+    if(editingCatId){fillCatParentOptions(editingCatId);
+      const ec=state.categories.find(function(x){return String(x.id)===String(editingCatId);});
+      if(ec)$("newCatParent").value=ec.parent_id?String(ec.parent_id):"";
+    }
   }catch(e){toast(e.message);}
 }
 
@@ -890,9 +937,15 @@ function bindForms(){
     catch(e){toast(e.message);}
   };
   $("btnAddCat").onclick=async function(){
-    try{await api("/api/categories",{method:"POST",body:{name:$("newCatName").value.trim(),kind:$("newCatKind").value,parent_id:$("newCatParent").value?+$("newCatParent").value:null,color:"#64748B",icon:"🏷️"}});$("newCatName").value="";toast("Đã thêm danh mục");loadCategories();}
+    try{await api("/api/categories",{method:"POST",body:{name:$("newCatName").value.trim(),kind:$("newCatKind").value,parent_id:$("newCatParent").value?+$("newCatParent").value:null,color:$("newCatColor").value||"#64748B",icon:$("newCatIcon").value.trim()||"🏷️"}});$("newCatName").value="";$("newCatIcon").value="";toast("Đã thêm danh mục");loadCategories();}
     catch(e){toast(e.message);}
   };
+  $("btnSaveCat").onclick=async function(){
+    if(!editingCatId)return;
+    try{await api("/api/categories/"+editingCatId,{method:"PUT",body:{name:$("newCatName").value.trim(),parent_id:$("newCatParent").value?+$("newCatParent").value:null,color:$("newCatColor").value||"#64748B",icon:$("newCatIcon").value.trim()||"🏷️"}});toast("Đã lưu thay đổi");resetCatForm();loadCategories();}
+    catch(e){toast(e.message);}
+  };
+  $("btnCancelCat").onclick=function(){resetCatForm();};
   $("btnSaveBudget").onclick=async function(){
     const lim=parseAmount($("budLimit").value);
     if(!$("budCat").value||lim==null||lim<0)return toast("Chọn danh mục và nhập hạn mức hợp lệ");
