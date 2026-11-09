@@ -62,6 +62,9 @@ label{display:block;font-size:14px;font-weight:600;margin:12px 0 6px}
 .tabs{display:flex;gap:8px;margin-bottom:6px}
 .tabs button{flex:1;min-height:48px;border-radius:12px;border:1px solid var(--line);background:#fff;font-weight:700}
 .tabs button.on{background:var(--primary);border-color:var(--primary);color:#fff}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{flex:1 1 28%;min-height:44px;border-radius:12px;border:1px solid var(--line);background:#fff;font-weight:700;font-size:15px}
+.seg button.on{background:var(--primary);border-color:var(--primary);color:#fff}
 .linkbtn{background:none;border:0;color:var(--primary);font-weight:600;padding:8px 0;text-align:left}
 /* Sidebar + bottom nav */
 .sidebar{display:none}
@@ -173,18 +176,18 @@ canvas{width:100%;height:180px;display:block}
   <div class="wrap">
     <div class="topbar"><div class="brand">💰 MyMoney</div><div class="who" id="whoBox"></div></div>
     <section id="view-dashboard" class="view">
-      <div class="row" style="margin-bottom:12px"><h2 style="flex:1">Xin chào, <span id="dashName">bạn</span> 👋</h2><input id="dashMonth" type="month" style="max-width:180px"></div>
+      <div class="row" style="margin-bottom:12px"><h2 style="flex:1">Xin chào, <span id="dashName">bạn</span> 👋</h2><input id="dashYear" type="number" min="2020" max="2100" style="max-width:96px" title="Năm"><input id="dashMonth" type="month" style="max-width:180px"></div>
       <div class="grid3" style="margin-bottom:12px">
-        <div class="kpi"><div class="lbl">Tổng số dư</div><div class="val" id="kTotal">—</div><div class="sub" id="kTotalSub"></div></div>
-        <div class="kpi"><div class="lbl">Thu nhập tháng</div><div class="val inc" id="kInc">—</div><div class="sub" id="kIncSub"></div></div>
-        <div class="kpi"><div class="lbl">Chi tiêu tháng</div><div class="val exp" id="kExp">—</div><div class="sub" id="kExpSub"></div></div>
+        <div class="kpi"><div class="lbl">Số dư</div><div class="val" id="kTotal">—</div><div class="sub" id="kTotalSub"></div></div>
+        <div class="kpi"><div class="lbl">Thu</div><div class="val inc" id="kInc">—</div><div class="sub" id="kIncSub"></div></div>
+        <div class="kpi"><div class="lbl">Chi</div><div class="val exp" id="kExp">—</div><div class="sub" id="kExpSub"></div></div>
       </div>
       <div class="grid2">
         <div class="kpi"><div class="lbl">Tiết kiệm tháng này</div><div class="val" id="kSave">—</div><div class="sub" id="kSaveSub"></div></div>
         <div class="kpi"><div class="lbl">Tỷ lệ tiết kiệm</div><div class="val" id="kRate">—</div><div class="sub">(Thu − Chi) ÷ Thu × 100</div></div>
       </div>
-      <div class="card" style="margin-top:14px"><h3>📊 Dòng tiền 6 tháng gần nhất</h3><canvas id="flowChart" width="640" height="180"></canvas><p class="muted">■ Thu nhập &nbsp; ■ Chi tiêu</p></div>
-      <div class="card"><h3>🍰 Cơ cấu chi tháng này</h3><div id="catBreak"></div></div>
+      <div class="card" style="margin-top:14px"><h3 id="flowTitle">📊 Dòng tiền 6 tháng gần nhất</h3><canvas id="flowChart" width="640" height="180"></canvas><p class="muted">■ Thu nhập &nbsp; ■ Chi tiêu</p></div>
+      <div class="card"><h3>🍰 Cơ cấu chi tháng này</h3><canvas id="catPie" width="640" height="260"></canvas><div id="catBreak"></div></div>
       <div class="card"><h3>🎯 Ngân sách tháng này</h3><div id="budgetDash"></div></div>
       <div class="card"><h3>👛 Ví của anh</h3><div id="dashAccounts"></div></div>
     </section>
@@ -260,9 +263,36 @@ canvas{width:100%;height:180px;display:block}
     </section>
 
     <section id="view-reports" class="view hidden">
-      <h2>Báo cáo</h2>
-      <div class="card"><div class="row"><input id="repYear" type="number" min="2020" max="2100"><button class="btn" id="btnLoadReport" type="button">Xem báo cáo</button></div></div>
-      <div class="card"><h3>Thu – chi theo tháng</h3><div class="tablewrap"><table><thead><tr><th>Tháng</th><th>Thu nhập</th><th>Chi tiêu</th><th>Tiết kiệm</th><th>Tỷ lệ TK</th></tr></thead><tbody id="repBody"></tbody></table></div></div>
+      <h2>Thống kê</h2>
+      <div class="card">
+        <div class="seg" id="statModes">
+          <button type="button" data-mode="week">Tuần</button>
+          <button type="button" data-mode="month" class="on">Tháng</button>
+          <button type="button" data-mode="year">Hàng năm</button>
+          <button type="button" data-mode="period">Period</button>
+          <button type="button" data-mode="summary">Tóm lược</button>
+          <button type="button" data-mode="trend">Khuynh hướng</button>
+        </div>
+        <div class="tabs" id="statKindTabs" style="margin-top:12px">
+          <button type="button" id="statTabExp" class="on">Chi</button>
+          <button type="button" id="statTabInc">Thu</button>
+        </div>
+        <div class="tabs hidden" id="statTrendTabs" style="margin-top:12px">
+          <button type="button" data-unit="week">Tuần</button>
+          <button type="button" data-unit="month" class="on">Tháng</button>
+          <button type="button" data-unit="year">Năm</button>
+        </div>
+        <div class="row" style="margin-top:12px" id="statControls">
+          <input id="statWeek" type="week" class="hidden">
+          <input id="statMonth" type="month">
+          <input id="statYear" type="number" min="2020" max="2100" class="hidden">
+          <span id="statPeriodWrap" class="hidden" style="display:flex;gap:8px;flex:1"><input id="statFrom" type="date" style="flex:1"><input id="statTo" type="date" style="flex:1"></span>
+        </div>
+        <p class="muted" id="statRangeLabel" style="margin-top:8px"></p>
+      </div>
+      <div class="card hidden" id="statSummaryCard"><h3>📌 Tóm lược toàn bộ thời gian</h3><div id="statSummary"></div></div>
+      <div class="card" id="statPieCard"><h3 id="statPieTitle">🍰 Cơ cấu chi</h3><canvas id="statPie" width="640" height="260"></canvas><div id="statList"></div></div>
+      <div class="card hidden" id="statTrendCard"><h3>📈 Khuynh hướng thu – chi</h3><canvas id="statLine" width="640" height="240"></canvas><p class="muted">■ Thu &nbsp; ■ Chi</p><div id="statTrendList"></div></div>
     </section>
 
     <section id="view-import" class="view hidden">
@@ -416,7 +446,7 @@ const state={user:null,accounts:[],categories:[],tx:[],budgets:[],recurrings:[],
 const NAV=[
   ["dashboard","🏠","Tổng quan"],["transactions","↕️","Giao dịch"],["accounts","💰","Ví"],
   ["categories","🏷️","Danh mục"],["budgets","🎯","Ngân sách"],["recurring","🔁","Định kỳ"],
-  ["goals","⭐","Mục tiêu"],["reports","📊","Báo cáo"],["import","⇩","Import"],
+  ["goals","⭐","Mục tiêu"],["reports","📊","Thống kê"],["import","⇩","Import"],
   ["settings","⚙️","Cài đặt"],["admin","🛡️","Quản trị"]
 ];
 function buildNav(){
@@ -459,7 +489,7 @@ function go(view){
   if(view==="budgets")loadBudgets();
   if(view==="recurring")loadRecurring();
   if(view==="goals")loadGoals();
-  if(view==="reports")loadReport();
+  if(view==="reports")loadStats();
   if(view==="import")fillAccountSelects();
   if(view==="settings")fillSettings();
   if(view==="admin")loadAdmin();
@@ -583,15 +613,20 @@ async function loadDashboard(){
   try{
     await loadBase();
     const m=$("dashMonth").value||monthVN();
-    const d=await api("/api/dashboard?month="+encodeURIComponent(m));
+    const y=$("dashYear").value||m.slice(0,4);
+    const d=await api("/api/dashboard?month="+encodeURIComponent(m)+"&year="+encodeURIComponent(y));
     $("kTotal").textContent=fmt(d.totalBalance);
     $("kTotalSub").textContent=(d.accounts||[]).length+" ví";
     $("kInc").textContent=fmt(d.income);$("kIncSub").textContent="Tháng trước "+fmt(d.prevIncome)+" ("+pctChange(d.income,d.prevIncome)+")";
     $("kExp").textContent=fmt(d.expense);$("kExpSub").textContent="Tháng trước "+fmt(d.prevExpense)+" ("+pctChange(d.expense,d.prevExpense)+")";
     $("kSave").textContent=fmt(d.saving);$("kSaveSub").textContent=d.saving>=0?"Tiết kiệm được":"Chi vượt thu";
     $("kRate").textContent=(d.savingRate||0)+"%";
-    drawFlow(d.flow||[]);
+    $("flowTitle").textContent="📊 Dòng tiền năm "+y;
+    const flowMap={};(d.flow||[]).forEach(function(r){flowMap[r.month]=r;});
+    const flow12=[];for(let i=1;i<=12;i++){const mm=y+"-"+String(i).padStart(2,"0");flow12.push(flowMap[mm]||{month:mm,income:0,expense:0});}
+    drawFlow(flow12);
     const tot=(d.byCategory||[]).reduce(function(s,x){return s+Number(x.total||0);},0);
+    drawPie($("catPie"),d.byCategory||[]);
     $("catBreak").innerHTML=(d.byCategory||[]).length?(d.byCategory||[]).map(function(x){
       const p=tot?Math.round(Number(x.total)/tot*100):0;
       return '<div class="catbar"><span class="nm">'+esc(x.category||"Khác")+'</span><span class="tr"><i style="width:'+p+'%;background:'+esc(x.color||"#2563EB")+'"></i></span><span class="pc">'+p+'%</span><span style="width:110px;text-align:right">'+fmt(x.total)+'</span></div>';}).join(""):'<p class="muted">Chưa có chi tiêu trong tháng này.</p>';
@@ -605,16 +640,32 @@ async function loadDashboard(){
 function drawFlow(flow){
   const cv=$("flowChart");if(!cv)return;const ctx=cv.getContext("2d");
   ctx.clearRect(0,0,cv.width,cv.height);
-  const rows=(flow||[]).slice(-6);
+  const rows=(flow||[]).slice(-12);
   if(!rows.length){ctx.fillStyle="#64748B";ctx.font="14px sans-serif";ctx.fillText("Chưa có dữ liệu dòng tiền.",10,90);return;}
   const max=Math.max.apply(null,rows.map(function(r){return Math.max(r.income,r.expense,1);}));
-  const bw=34,gap=(cv.width-40)/rows.length;
+  const bw=Math.min(34,(cv.width-40)/rows.length*0.55),gap=(cv.width-40)/rows.length;
   rows.forEach(function(r,i){
     const x=20+i*gap;
     const ih=r.income/max*130, eh=r.expense/max*130;
     ctx.fillStyle="#16A34A";ctx.fillRect(x,160-ih,bw,ih);
     ctx.fillStyle="#DC2626";ctx.fillRect(x+bw+4,160-eh,bw,eh);
-    ctx.fillStyle="#64748B";ctx.font="11px sans-serif";ctx.fillText("T"+r.month.slice(5),x+8,176);
+    ctx.fillStyle="#64748B";ctx.font="11px sans-serif";ctx.fillText("T"+(+r.month.slice(5)),x+8,176);
+  });
+}
+const PIE_COLORS=["#2563EB","#F59E0B","#16A34A","#DC2626","#7C3AED","#0891B2","#DB2777","#65A30D","#EA580C","#0D9488"];
+function drawPie(cv,rows){
+  if(!cv)return;const ctx=cv.getContext("2d");
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const tot=(rows||[]).reduce(function(s,x){return s+Number(x.total||0);},0);
+  if(!tot||!rows.length){ctx.fillStyle="#64748B";ctx.font="14px sans-serif";ctx.fillText("Chưa có dữ liệu.",10,30);return;}
+  const cx=cv.width/2,cy=cv.height/2,r=Math.min(cv.width,cv.height)/2-12;
+  let a=-Math.PI/2;
+  rows.forEach(function(x,i){
+    const a2=a+Number(x.total)/tot*Math.PI*2;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,a,a2);ctx.closePath();
+    ctx.fillStyle=x.color||PIE_COLORS[i%PIE_COLORS.length];ctx.fill();
+    ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.stroke();
+    a=a2;
   });
 }
 
@@ -764,13 +815,135 @@ async function loadGoals(){
   }catch(e){toast(e.message);}
 }
 
-/* ================= Báo cáo ================= */
-async function loadReport(){
-  try{const y=$("repYear").value||new Date().getFullYear();
-    const d=await api("/api/reports/monthly?year="+encodeURIComponent(y));
-    $("repBody").innerHTML=(d.rows||[]).map(function(r){const s=r.income-r.expense;const rate=r.income?Math.round(s/r.income*1000)/10:0;
-      return "<tr><td>"+esc(r.month)+"</td><td class='inc'>"+fmt(r.income)+"</td><td class='exp'>"+fmt(r.expense)+"</td><td>"+fmt(s)+"</td><td>"+rate+"%</td></tr>";}).join("")||'<tr><td colspan="5" class="muted">Chưa có dữ liệu năm này.</td></tr>';
+/* ================= Thống kê ================= */
+const statState={mode:"month",kind:"expense",trendUnit:"month"};
+function isoWeekOf(ymd){ // "YYYY-MM-DD" -> "YYYY-Www" (tuan ISO, thu 2 dau tuan)
+  const p=ymd.split("-").map(Number);
+  const t=new Date(Date.UTC(p[0],p[1]-1,p[2]));
+  const day=(t.getUTCDay()+6)%7;t.setUTCDate(t.getUTCDate()-day+3);
+  const first=new Date(Date.UTC(t.getUTCFullYear(),0,4));
+  const fday=(first.getUTCDay()+6)%7;first.setUTCDate(first.getUTCDate()-fday+3);
+  const w=1+Math.round((t-first)/(7*864e5));
+  return t.getUTCFullYear()+"-W"+String(w).padStart(2,"0");
+}
+function mondayOfISOWeek(s){ // "YYYY-Www" -> Date UTC thu 2 dau tuan, hoac null
+  const m=String(s||"").match(/^(\d{4})-W(\d{2})$/);if(!m)return null;
+  const d=new Date(Date.UTC(+m[1],0,4));
+  const day=(d.getUTCDay()+6)%7;d.setUTCDate(d.getUTCDate()-day+(+m[2]-1)*7);
+  return d;
+}
+function fmtDateUTC(d){return d.getUTCFullYear()+"-"+String(d.getUTCMonth()+1).padStart(2,"0")+"-"+String(d.getUTCDate()).padStart(2,"0");}
+function statRange(){
+  const mode=statState.mode;
+  if(mode==="week"){
+    const mon=mondayOfISOWeek($("statWeek").value||"");
+    if(!mon)return null;
+    const sun=new Date(mon.getTime()+6*864e5);
+    return {from:fmtDateUTC(mon),to:fmtDateUTC(sun),label:"Tuần "+fmtDateUTC(mon)+" → "+fmtDateUTC(sun)};
+  }
+  if(mode==="month"){
+    const v=$("statMonth").value||monthVN();
+    const p=v.split("-").map(Number);
+    const last=new Date(Date.UTC(p[0],p[1],0)).getUTCDate();
+    return {from:v+"-01",to:v+"-"+String(last).padStart(2,"0"),label:"Tháng "+p[1]+"/"+p[0]};
+  }
+  if(mode==="year"){
+    const y=$("statYear").value||new Date().getFullYear();
+    return {from:y+"-01-01",to:y+"-12-31",label:"Năm "+y};
+  }
+  if(mode==="period"){
+    const f=$("statFrom").value,t=$("statTo").value;
+    if(!f||!t)return null;
+    return {from:f,to:t,label:f+" → "+t};
+  }
+  return null; // summary: toan bo thoi gian
+}
+function statListHTML(rows,total){
+  if(!rows.length)return '<p class="muted">Chưa có dữ liệu trong kỳ này.</p>';
+  return rows.map(function(x,i){
+    const p=total?Math.round(Number(x.total)/total*100):0;
+    return '<div class="catbar"><span class="nm">'+esc(x.category||"Khác")+'</span><span class="tr"><i style="width:'+p+'%;background:'+esc(x.color||PIE_COLORS[i%PIE_COLORS.length])+'"></i></span><span class="pc">'+p+'%</span><span style="width:110px;text-align:right">'+fmt(x.total)+'</span></div>';
+  }).join("");
+}
+function trendLabel(l){
+  if(/^\d{4}-\d{2}$/.test(l))return "T"+(+l.slice(5))+"/"+l.slice(2,4);
+  if(/^\d{4}-\d{2}-\d{2}$/.test(l))return l.slice(8)+"/"+l.slice(5,7);
+  return l;
+}
+function drawLine(cv,points){
+  if(!cv)return;const ctx=cv.getContext("2d");
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const rows=points||[];
+  if(!rows.length){ctx.fillStyle="#64748B";ctx.font="14px sans-serif";ctx.fillText("Chưa có dữ liệu.",10,30);return;}
+  const max=Math.max.apply(null,rows.map(function(r){return Math.max(r.income,r.expense,1);}));
+  const L=46,R=10,T=14,B=26,W=cv.width-L-R,H=cv.height-T-B;
+  ctx.strokeStyle="#E2E8F0";ctx.lineWidth=1;
+  for(let g=0;g<=4;g++){const y=T+H-g*H/4;ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(L+W,y);ctx.stroke();}
+  function xy(i,v){return [L+i*(W/Math.max(rows.length-1,1)),T+H-(v/max)*H];}
+  function line(key,color){
+    ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();
+    rows.forEach(function(r,i){const p=xy(i,r[key]);if(i===0)ctx.moveTo(p[0],p[1]);else ctx.lineTo(p[0],p[1]);});
+    ctx.stroke();
+    ctx.fillStyle=color;
+    rows.forEach(function(r,i){const p=xy(i,r[key]);ctx.beginPath();ctx.arc(p[0],p[1],3,0,Math.PI*2);ctx.fill();});
+  }
+  line("income","#16A34A");line("expense","#DC2626");
+  ctx.fillStyle="#64748B";ctx.font="11px sans-serif";
+  rows.forEach(function(r,i){ctx.fillText(trendLabel(r.label),L+i*(W/Math.max(rows.length-1,1))-14,cv.height-8);});
+}
+async function loadStats(){
+  try{
+    const mode=statState.mode;
+    $("statWeek").classList.toggle("hidden",mode!=="week");
+    $("statMonth").classList.toggle("hidden",mode!=="month");
+    $("statYear").classList.toggle("hidden",mode!=="year");
+    $("statPeriodWrap").classList.toggle("hidden",mode!=="period");
+    show("statKindTabs",mode!=="trend");
+    show("statTrendTabs",mode==="trend");
+    show("statPieCard",mode!=="trend");
+    show("statTrendCard",mode==="trend");
+    show("statSummaryCard",mode==="summary");
+    if(mode==="trend"){
+      const d=await api("/api/stats/trend?unit="+encodeURIComponent(statState.trendUnit));
+      drawLine($("statLine"),d.points||[]);
+      const pts=d.points||[];
+      $("statTrendList").innerHTML=pts.length?pts.slice().reverse().map(function(r){
+        const lbl=statState.trendUnit==="week"?("Tuần từ "+trendLabel(r.label)):trendLabel(r.label);
+        return '<div class="list-item"><div class="mid"><div class="t">'+esc(lbl)+'</div><div class="s">Thu '+fmt(r.income)+' • Chi '+fmt(r.expense)+'</div></div><div class="amt">'+fmt(r.income-r.expense)+'</div></div>';
+      }).join(""):'<p class="muted">Chưa có dữ liệu.</p>';
+      $("statRangeLabel").textContent="Khuynh hướng • "+(statState.trendUnit==="week"?"12 tuần gần nhất":statState.trendUnit==="year"?"5 năm gần nhất":"12 tháng gần nhất");
+      return;
+    }
+    const r=statRange();
+    if(mode!=="summary"&&!r){$("statRangeLabel").textContent="Chọn kỳ thống kê.";return;}
+    if(mode==="summary"){
+      const inc=await api("/api/stats?kind=income");
+      const exp=await api("/api/stats?kind=expense");
+      const sv=inc.total-exp.total;
+      $("statSummary").innerHTML='<div class="grid3"><div class="kpi"><div class="lbl">Tổng thu</div><div class="val inc">'+fmt(inc.total)+'</div></div><div class="kpi"><div class="lbl">Tổng chi</div><div class="val exp">'+fmt(exp.total)+'</div></div><div class="kpi"><div class="lbl">Tiết kiệm</div><div class="val">'+fmt(sv)+'</div></div></div>';
+    }
+    const q=r?("?kind="+statState.kind+"&from="+encodeURIComponent(r.from)+"&to="+encodeURIComponent(r.to)):("?kind="+statState.kind);
+    const d=await api("/api/stats"+q);
+    $("statPieTitle").textContent="🍰 Cơ cấu "+(statState.kind==="income"?"thu":"chi")+(r?" • "+r.label:" • toàn bộ thời gian");
+    drawPie($("statPie"),d.byCategory||[]);
+    $("statList").innerHTML=statListHTML(d.byCategory||[],d.total||0);
+    $("statRangeLabel").textContent=(r?r.label:"Toàn bộ thời gian")+" • Tổng "+(statState.kind==="income"?"thu":"chi")+": "+fmt(d.total||0);
   }catch(e){toast(e.message);}
+}
+function bindStats(){
+  $("statModes").querySelectorAll("button[data-mode]").forEach(function(b){b.onclick=function(){
+    $("statModes").querySelectorAll("button").forEach(function(x){x.classList.remove("on");});
+    b.classList.add("on");statState.mode=b.dataset.mode;loadStats();
+  };});
+  $("statTabExp").onclick=function(){$("statTabExp").classList.add("on");$("statTabInc").classList.remove("on");statState.kind="expense";loadStats();};
+  $("statTabInc").onclick=function(){$("statTabInc").classList.add("on");$("statTabExp").classList.remove("on");statState.kind="income";loadStats();};
+  $("statTrendTabs").querySelectorAll("button[data-unit]").forEach(function(b){b.onclick=function(){
+    $("statTrendTabs").querySelectorAll("button").forEach(function(x){x.classList.remove("on");});
+    b.classList.add("on");statState.trendUnit=b.dataset.unit;loadStats();
+  };});
+  ["statWeek","statMonth","statYear","statFrom","statTo"].forEach(function(id){
+    $(id).addEventListener("change",loadStats);
+  });
 }
 
 /* ================= Import ================= */
@@ -930,7 +1103,8 @@ function bindForms(){
   };
   $("btnAddTxTop").onclick=function(){openTxModal("expense");};
   $("txMonth").addEventListener("change",loadTx);$("txCatFilter").addEventListener("change",loadTx);$("txSearch").addEventListener("input",function(){clearTimeout(this._t);this._t=setTimeout(loadTx,400);});
-  $("dashMonth").addEventListener("change",loadDashboard);
+  $("dashMonth").addEventListener("change",function(){$("dashYear").value=$("dashMonth").value.slice(0,4);loadDashboard();});
+  $("dashYear").addEventListener("change",function(){const y=$("dashYear").value||new Date().getFullYear();$("dashMonth").value=y+"-01";loadDashboard();});
   $("btnAddAcc").onclick=async function(){
     const open=parseAmount($("accOpen").value||"0");
     try{await api("/api/accounts",{method:"POST",body:{name:$("accName").value.trim(),type:$("accType").value,opening_balance:isNaN(open)?0:open,currency:"VND",color:"#2563EB",icon:$("accType").selectedOptions[0].textContent.trim().split(" ")[0]}});$("accName").value="";$("accOpen").value="";toast("Đã thêm ví");loadAccounts();}
@@ -963,15 +1137,18 @@ function bindForms(){
     try{await api("/api/goals",{method:"POST",body:{name:$("goalName").value.trim(),target_amount:tgt,deadline:$("goalDeadline").value||null}});$("goalName").value="";$("goalTarget").value="";toast("Đã thêm mục tiêu");loadGoals();}
     catch(e){toast(e.message);}
   };
-  $("btnLoadReport").onclick=loadReport;
 }
 
 /* ================= Khởi động ================= */
 (function init(){
   const m=monthVN();
   ["dashMonth","txMonth","budMonth"].forEach(function(id){const el=$(id);if(el)el.value=m;});
-  $("repYear").value=new Date().getFullYear();
-  bindAuth();bindForms();bindSettings();bindImport();
+  $("dashYear").value=new Date().getFullYear();
+  $("statWeek").value=isoWeekOf(todayVN());
+  $("statMonth").value=monthVN();
+  $("statYear").value=new Date().getFullYear();
+  $("statFrom").value=monthVN()+"-01";$("statTo").value=todayVN();
+  bindAuth();bindForms();bindSettings();bindImport();bindStats();
   const u=me();
   if(token()&&u){state.user=u;
     api("/api/me").then(function(d){state.user=d.user;saveUser(d.user);showApp(true);})
