@@ -8,14 +8,16 @@
 <script src="config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-:root{--primary:#2563EB;--primary-d:#1D4ED8;--bg:#F8FAFC;--card:#fff;--text:#0F172A;--muted:#64748B;--line:#E2E8F0;--income:#16A34A;--expense:#DC2626;--warn:#F59E0B;--radius:14px;--soft:#EFF6FF;--danger-bg:#FEF2F2;--setup-bg:#FFFBEB}
-html[data-theme="dark"]{--primary:#38BDF8;--primary-d:#0284C7;--bg:#0F172A;--card:#1E293B;--text:#F1F5F9;--muted:#94A3B8;--line:#334155;--income:#4ADE80;--expense:#F87171;--warn:#FBBF24;--soft:#243447;--danger-bg:#450A0A;--setup-bg:#451A03}
-html[data-theme="green"]{--primary:#16A34A;--primary-d:#15803D;--bg:#F0FDF4;--soft:#DCFCE7}
-html[data-theme="purple"]{--primary:#7C3AED;--primary-d:#6D28D9;--bg:#FAF5FF;--soft:#EDE9FE}
-html[data-theme="sunset"]{--primary:#EA580C;--primary-d:#C2410C;--bg:#FFF7ED;--soft:#FFEDD5}
+:root{--primary:#2563EB;--primary-d:#1D4ED8;--bg:#F8FAFC;--bg2:#E8F0FE;--card:#fff;--text:#0F172A;--muted:#64748B;--line:#E2E8F0;--income:#16A34A;--expense:#DC2626;--warn:#F59E0B;--radius:14px;--soft:#EFF6FF;--danger-bg:#FEF2F2;--setup-bg:#FFFBEB}
+html[data-theme="dark"]{--primary:#38BDF8;--primary-d:#0284C7;--bg:#0F172A;--bg2:#1E1B4B;--card:#1E293B;--text:#F1F5F9;--muted:#94A3B8;--line:#334155;--income:#4ADE80;--expense:#F87171;--warn:#FBBF24;--soft:#243447;--danger-bg:#450A0A;--setup-bg:#451A03}
+html[data-theme="green"]{--primary:#16A34A;--primary-d:#15803D;--bg:#F0FDF4;--bg2:#DCFCE7;--soft:#DCFCE7}
+html[data-theme="purple"]{--primary:#7C3AED;--primary-d:#6D28D9;--bg:#FAF5FF;--bg2:#EDE9FE;--soft:#EDE9FE}
+html[data-theme="sunset"]{--primary:#EA580C;--primary-d:#C2410C;--bg:#FFF7ED;--bg2:#FFEDD5;--soft:#FFEDD5}
+html[data-theme="ocean"]{--primary:#0284C7;--primary-d:#0369A1;--bg:#ECFEFF;--bg2:#CFFAFE;--soft:#CFFAFE}
+html[data-theme="rose"]{--primary:#DB2777;--primary-d:#BE185D;--bg:#FFF1F2;--bg2:#FFE4E6;--soft:#FFE4E6}
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:16px;line-height:1.5}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(165deg,var(--bg),var(--bg2)) fixed;color:var(--text);font-size:16px;line-height:1.5}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 a{color:var(--primary)}
@@ -103,10 +105,11 @@ canvas{width:100%;height:180px;display:block}
 .chart-svg .slice text{pointer-events:none}
 .chart-svg .barcol{cursor:pointer}
 .chart-svg .vallbl{font-size:11px;font-weight:700;paint-order:stroke;stroke:var(--card);stroke-width:3px}
-.chart-svg .pielbl{font-size:13px;fill:var(--text)}
+.chart-svg .pielbl{font-size:13px;fill:var(--text);pointer-events:none}
+.chart-svg line{pointer-events:none}
 .chart-svg .axis{font-size:11px;fill:var(--muted)}
 #chartTip{position:fixed;z-index:90;max-width:270px;background:#0F172A;color:#fff;padding:10px 12px;border-radius:10px;font-size:14px;line-height:1.5;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.3)}
-.icongrid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.icongrid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;max-height:230px;overflow:auto;padding-right:2px}
 .icongrid button{min-height:46px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-size:21px;padding:0}
 .icongrid button.on{border-color:var(--primary);background:var(--soft);box-shadow:0 0 0 1px var(--primary)}
 .theme-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
@@ -691,28 +694,79 @@ function explodeSlice(g,on){
   const mid=parseFloat(g.getAttribute("data-mid")||"0");
   g.style.transform="translate("+(Math.cos(mid)*10).toFixed(1)+"px,"+(Math.sin(mid)*10).toFixed(1)+"px)";
 }
+const PIE_CX=320,PIE_CY=146,PIE_R=104;
+function sliceIndexAt(rows,total,vx,vy){
+  // Tim lat pie theo vi tri cham (toa do viewBox): tinh goc quanh tam roi
+  // doi ra lat tuong ung — lat mong van bam duoc, ke ca khi bam vao nhan.
+  if(!rows||!rows.length||!total)return null;
+  const dx=vx-PIE_CX,dy=vy-PIE_CY;
+  const dist=Math.sqrt(dx*dx+dy*dy);
+  if(dist>PIE_R+30)return null;
+  let rel=Math.atan2(dy,dx)+Math.PI/2;if(rel<0)rel+=Math.PI*2;
+  const f=rel/(Math.PI*2);
+  let acc=0;
+  for(let i=0;i<rows.length;i++){
+    acc+=Number(rows[i].total||0)/total;
+    if(f<=acc)return i;
+  }
+  return rows.length-1;
+}
 function bindChartTips(el){
   if(!el||el._tipsBound)return;el._tipsBound=true;
+  function showSlice(i,x,y){
+    const slices=el.querySelectorAll(".slice");
+    slices.forEach(function(g,j){explodeSlice(g,j===i);});
+    const g=slices[i];if(!g)return;
+    showTip(g.getAttribute("data-tip"),x,y);
+  }
+  function clearSlices(){el.querySelectorAll(".slice").forEach(function(g){explodeSlice(g,false);});}
+  function pieHit(x,y){
+    const d=el._pieData;if(!d)return null;
+    const svg=el.querySelector("svg");if(!svg)return null;
+    const rct=svg.getBoundingClientRect();
+    if(!rct.width||!rct.height)return null;
+    const vx=(x-rct.left)/rct.width*640,vy=(y-rct.top)/rct.height*300;
+    return sliceIndexAt(d.rows,d.total,vx,vy);
+  }
   el.addEventListener("pointerover",function(e){
+    if(el._pieData){
+      const i=pieHit(e.clientX,e.clientY);
+      if(i==null)return;
+      showSlice(i,e.clientX,e.clientY);
+      return;
+    }
     const g=e.target.closest?e.target.closest("[data-tip]"):null;
     if(!g||!el.contains(g))return;
     showTip(g.getAttribute("data-tip"),e.clientX,e.clientY);
-    if(g.classList.contains("slice"))explodeSlice(g,true);
   });
   el.addEventListener("pointermove",function(e){
+    if(el._pieData){
+      const i=pieHit(e.clientX,e.clientY);
+      if(i==null){clearSlices();hideTip();return;}
+      showSlice(i,e.clientX,e.clientY);
+      return;
+    }
     const g=e.target.closest?e.target.closest("[data-tip]"):null;
     if(g&&el.contains(g))showTip(g.getAttribute("data-tip"),e.clientX,e.clientY);
   });
   el.addEventListener("pointerout",function(e){
-    const g=e.target.closest?e.target.closest("[data-tip]"):null;
-    if(g&&g.classList.contains("slice")){
-      const rel=e.relatedTarget;
-      if(rel&&g.contains(rel))return;
-      explodeSlice(g,false);
-    }
+    if(e.pointerType==="touch")return; // tren cam ung giu callout den khi bam cho khac
+    if(el._pieData)clearSlices();
     if(!e.relatedTarget||!el.contains(e.relatedTarget))hideTip();
   });
-  el.addEventListener("pointerleave",function(){hideTip();});
+  el.addEventListener("pointerleave",function(e){
+    if(e.pointerType==="touch")return;
+    if(el._pieData)clearSlices();
+    hideTip();
+  });
+  if(!bindChartTips._docBound){
+    bindChartTips._docBound=true;
+    document.addEventListener("pointerdown",function(e){
+      if(e.target.closest&&e.target.closest(".chart-svg"))return;
+      document.querySelectorAll(".slice").forEach(function(g){explodeSlice(g,false);});
+      hideTip();
+    });
+  }
 }
 /* --- Bieu do cot dong tien (SVG) --- */
 function flowSVG(rows){
@@ -751,7 +805,7 @@ function drawFlow(flow){
 /* --- Bieu do pie 3D (SVG) --- */
 let pieUid=0;
 function pieSVG(rows,p,uid){
-  const W=640,H=300,cx=320,cy=146,r=104,d=16;
+  const W=640,H=300,cx=PIE_CX,cy=PIE_CY,r=PIE_R,d=16;
   const tot=(rows||[]).reduce(function(s,x){return s+Number(x.total||0);},0);
   let out='<svg class="chart-svg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Biểu đồ hình tròn">';
   out+='<defs><radialGradient id="'+uid+'hi" cx="38%" cy="30%" r="75%"><stop offset="0%" stop-color="#fff" stop-opacity="0.22"/><stop offset="60%" stop-color="#fff" stop-opacity="0"/></radialGradient><filter id="'+uid+'sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#0F172A" flood-opacity="0.20"/></filter></defs>';
@@ -789,12 +843,18 @@ function pieSVG(rows,p,uid){
   });
   out+='<ellipse cx="'+cx+'" cy="'+cy+'" rx="'+r+'" ry="'+r+'" fill="url(#'+uid+'hi)"/>';
   out+='</g>';
-  labels.sort(function(u,v){return u.y-v.y;});
-  let prevY=-100;
-  labels.forEach(function(lb){
-    if(lb.y-prevY<16)lb.y=prevY+16;
-    if(lb.y<12)lb.y=12;if(lb.y>H-8)lb.y=H-8;
-    prevY=lb.y;
+  // Nhan chia 2 cot trai/phai, dan theo chieu doc rieng tung cot de tat ca
+  // nhan deu doc duoc ke ca khi co nhieu lat.
+  const leftLabels=labels.filter(function(lb){return Math.cos(lb.mid)<0;});
+  const rightLabels=labels.filter(function(lb){return Math.cos(lb.mid)>=0;});
+  [leftLabels,rightLabels].forEach(function(col){
+    col.sort(function(u,v){return u.y-v.y;});
+    let prevY=-100;
+    col.forEach(function(lb){
+      if(lb.y-prevY<16)lb.y=prevY+16;
+      if(lb.y<12)lb.y=12;if(lb.y>H-8)lb.y=H-8;
+      prevY=lb.y;
+    });
   });
   labels.forEach(function(lb){
     const cos=Math.cos(lb.mid);
@@ -812,6 +872,7 @@ function renderPie(el,rows){
   const uid="pie"+(++pieUid);
   const list=rows||[];
   const tot=list.reduce(function(s,x){return s+Number(x.total||0);},0);
+  el._pieData={rows:list,total:tot};
   if(!tot||!list.length){el.innerHTML=pieSVG(list,1,uid);return;}
   const tok=(el._pieToken=(el._pieToken||0)+1);
   const t0=performance.now(),dur=700;
@@ -950,7 +1011,7 @@ function startEditCat(c){
   show("btnAddCat",false);show("catEditBtns",true);
   $("catFormTitle").scrollIntoView({behavior:"smooth",block:"center"});
 }
-const CAT_ICONS=["🍜","☕","🛒","🏠","💡","🛵","⛽","🚌","📚","🎓","💊","🏥","💪","🛍️","👕","🎬","🎮","🎵","✈️","🏖️","🐶","👶","🎁","🧾","📱","💇","🧹","💼","📈","💰"];
+const CAT_ICONS=["🍜","☕","🛒","🏠","💡","🛵","⛽","🚌","📚","🎓","💊","🏥","💪","🛍️","👕","🎬","🎮","🎵","✈️","🏖️","🐶","👶","🎁","🧾","📱","💇","🧹","💼","📈","💰","🍕","🍔","🍟","🍩","🍰","🍎","🥛","🍺","🍷","🍗","🥗","🍝","🛏️","🚿","🛋️","🧺","🚕","🏍️","🚲","🚂","💄","👗","👞","👜","🎒","👓","⌚","💍","📷","🎧","🏦","💳","💸","🪙","🐱","🎂","🎉","🎤","🎸","🎲","🏃","⚽","🏊","🧘","👔","🖥️","📞","🎯","🎳","🎪"];
 const CAT_COLOR_POOL=PIE_COLORS.concat(["#F59E0B","#059669","#9333EA","#0284C7","#E11D48","#A16207","#0F766E","#B91C1C","#6D28D9","#0369A1","#BE123C","#15803D"]);
 function buildIconGrid(){
   const g=$("catIconGrid");if(!g)return;
@@ -1357,7 +1418,9 @@ const THEMES={
   dark:{name:"Tối",dots:["#38BDF8","#0F172A","#F1F5F9"]},
   green:{name:"Xanh lá",dots:["#16A34A","#F0FDF4","#0F172A"]},
   purple:{name:"Tím",dots:["#7C3AED","#FAF5FF","#0F172A"]},
-  sunset:{name:"Cam nắng",dots:["#EA580C","#FFF7ED","#0F172A"]}
+  sunset:{name:"Cam nắng",dots:["#EA580C","#FFF7ED","#0F172A"]},
+  ocean:{name:"Biển xanh",dots:["#0284C7","#ECFEFF","#0F172A"]},
+  rose:{name:"Hồng đào",dots:["#DB2777","#FFF1F2","#0F172A"]}
 };
 function applyTheme(name){
   if(!THEMES[name])name="default";
