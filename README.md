@@ -52,7 +52,10 @@ production nên đặt đúng `https://dhkdvtqn.github.io`.
 - **Tài khoản đầu tiên đăng ký sẽ tự thành admin** (không có mật khẩu
   mặc định, không có tài khoản demo). Đăng ký bằng **email hoặc số điện
   thoại** — sau này chính là tài khoản đăng nhập.
-- Đăng nhập hết hạn sau 12 giờ thì đăng nhập lại.
+- Đăng nhập hết hạn sau 12 giờ thì đăng nhập lại. Tick **“Lưu đăng nhập”**
+  ở màn hình đăng nhập thì phiên kéo dài **30 ngày**, mở lại trang là vào
+  thẳng không cần nhập lại tài khoản/mật khẩu (mật khẩu không bao giờ được
+  lưu, chỉ lưu token đăng nhập; bấm Đăng xuất là token hết hiệu lực ngay).
 - Quên mật khẩu: nhập email/SĐT đã đăng ký rồi **trả lời đúng tất cả câu hỏi
   bí mật** (đặt tối thiểu 3 câu khi đăng ký) là được đặt mật khẩu mới — không
   gửi email. Tài khoản cũ chưa có câu hỏi thì vào **Cài đặt → Câu hỏi bí mật**

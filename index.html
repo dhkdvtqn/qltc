@@ -121,6 +121,7 @@ canvas{width:100%;height:180px;display:block}
     <div id="loginForm">
       <label>Email hoặc số điện thoại</label><input id="loginIdent" type="text" autocomplete="username" placeholder="email@vd.com hoặc 0987654321">
       <label>Mật khẩu</label><input id="loginPass" type="password" autocomplete="current-password" placeholder="Mật khẩu">
+      <label style="display:flex;align-items:center;gap:8px;font-weight:normal;margin-top:12px"><input id="rememberMe" type="checkbox" style="width:auto;min-height:0;margin:0"> Lưu đăng nhập (lần sau mở lên không cần nhập lại)</label>
       <div style="margin-top:14px"><button class="btn primary block" id="btnLogin" type="button">Đăng nhập</button></div>
       <button class="linkbtn" id="linkForgot" type="button">Quên mật khẩu?</button>
     </div>
@@ -349,11 +350,22 @@ canvas{width:100%;height:180px;display:block}
 "use strict";
 /* ================= Cấu hình & tiện ích ================= */
 const LS_TOKEN="mymoney_token", LS_USER="mymoney_user";
+// "Luu dang nhap" = luu token vao localStorage (ton tai 30 ngay, mo lai van
+// vao thang). Khong tick = chi luu vao sessionStorage (tat trinh duyet/tab
+// la mat, lan sau phai dang nhap lai). Mat khau khong bao gio duoc luu.
 // Địa chỉ Worker API chỉ lấy từ config.js (anh sửa file đó rồi đẩy lại GitHub),
 // không cho nhập/sửa trên giao diện nữa.
 function apiBase(){return (window.MYMONEY_API_BASE||"").trim().replace(/\/+$/,"");}
-function token(){return localStorage.getItem(LS_TOKEN)||"";}
-function me(){try{return JSON.parse(localStorage.getItem(LS_USER)||"null");}catch(e){return null;}}
+function token(){return sessionStorage.getItem(LS_TOKEN)||localStorage.getItem(LS_TOKEN)||"";}
+function me(){try{return JSON.parse(sessionStorage.getItem(LS_USER)||localStorage.getItem(LS_USER)||"null");}catch(e){return null;}}
+function saveSession(tok,user,remember){
+  if(remember){localStorage.setItem(LS_TOKEN,tok);localStorage.setItem(LS_USER,JSON.stringify(user));sessionStorage.removeItem(LS_TOKEN);sessionStorage.removeItem(LS_USER);}
+  else{sessionStorage.setItem(LS_TOKEN,tok);sessionStorage.setItem(LS_USER,JSON.stringify(user));localStorage.removeItem(LS_TOKEN);localStorage.removeItem(LS_USER);}
+}
+function saveUser(user){ // luu lai thong tin user vao dung cho da luu token
+  if(sessionStorage.getItem(LS_TOKEN))sessionStorage.setItem(LS_USER,JSON.stringify(user));
+  else localStorage.setItem(LS_USER,JSON.stringify(user));
+}
 function todayVN(){return new Date().toLocaleString("en-CA",{timeZone:"Asia/Ho_Chi_Minh"}).slice(0,10);}
 function monthVN(){return todayVN().slice(0,7);}
 function fmt(n){n=Number(n||0);return new Intl.NumberFormat("vi-VN").format(n)+" đ";}
@@ -389,6 +401,7 @@ async function api(path,opts){
 }
 function logout(silent){
   localStorage.removeItem(LS_TOKEN);localStorage.removeItem(LS_USER);
+  sessionStorage.removeItem(LS_TOKEN);sessionStorage.removeItem(LS_USER);
   if(!silent){api("/api/auth/logout",{method:"POST"}).catch(function(){});}
   state.user=null;showApp(false);
 }
@@ -496,15 +509,15 @@ function bindAuth(){
   $("linkBackLogin").onclick=function(){show("forgotForm",false);show("loginForm",true);};
   $("btnAddRegQ").onclick=function(){addQARow("regQA",5);};
   $("btnLogin").onclick=async function(){
-    try{const d=await api("/api/auth/login",{method:"POST",body:{identifier:$("loginIdent").value.trim(),password:$("loginPass").value}});
-      localStorage.setItem(LS_TOKEN,d.token);localStorage.setItem(LS_USER,JSON.stringify(d.user));state.user=d.user;toast("Đăng nhập thành công");showApp(true);
+    try{const d=await api("/api/auth/login",{method:"POST",body:{identifier:$("loginIdent").value.trim(),password:$("loginPass").value,remember:$("rememberMe").checked}});
+      saveSession(d.token,d.user,$("rememberMe").checked);state.user=d.user;toast("Đăng nhập thành công");showApp(true);
     }catch(e){$("authMsg").textContent=e.message;}
   };
   $("btnRegister").onclick=async function(){
     const qs=collectQA("regQA");
     if(qs.length<3){$("authMsg").textContent="Nhập ít nhất 3 câu hỏi bí mật và câu trả lời.";return;}
-    try{const d=await api("/api/auth/register",{method:"POST",body:{identifier:$("regIdent").value.trim(),password:$("regPass").value,full_name:$("regName").value.trim(),questions:qs,currency:"VND",timezone:"Asia/Ho_Chi_Minh"}});
-      localStorage.setItem(LS_TOKEN,d.token);localStorage.setItem(LS_USER,JSON.stringify(d.user));state.user=d.user;toast("Đăng ký thành công — tài khoản đầu tiên là Admin");showApp(true);
+    try{const d=await api("/api/auth/register",{method:"POST",body:{identifier:$("regIdent").value.trim(),password:$("regPass").value,full_name:$("regName").value.trim(),questions:qs,remember:true,currency:"VND",timezone:"Asia/Ho_Chi_Minh"}});
+      saveSession(d.token,d.user,true);state.user=d.user;toast("Đăng ký thành công — tài khoản đầu tiên là Admin");showApp(true);
     }catch(e){$("authMsg").textContent=e.message;}
   };
   // Quen mat khau — buoc 1: lay cau hoi; buoc 2: tra loi dung het -> nhan token -> dat MK moi.
@@ -819,7 +832,7 @@ function bindSettings(){
     catch(e){$("setPassMsg").textContent=e.message;}
   };
   $("btnSaveProfile").onclick=async function(){
-    try{await api("/api/me",{method:"PUT",body:{full_name:$("setName").value.trim(),currency:$("setCurrency").value,timezone:$("setTz").value.trim()||"Asia/Ho_Chi_Minh"}});const u=me();if(u){u.full_name=$("setName").value.trim();u.currency=$("setCurrency").value;localStorage.setItem(LS_USER,JSON.stringify(u));state.user=u;}toast("Đã lưu hồ sơ");}
+    try{await api("/api/me",{method:"PUT",body:{full_name:$("setName").value.trim(),currency:$("setCurrency").value,timezone:$("setTz").value.trim()||"Asia/Ho_Chi_Minh"}});const u=me();if(u){u.full_name=$("setName").value.trim();u.currency=$("setCurrency").value;saveUser(u);state.user=u;}toast("Đã lưu hồ sơ");}
     catch(e){toast(e.message);}
   };
   $("btnLogout").onclick=function(){logout(false);toast("Đã đăng xuất");};
@@ -908,7 +921,7 @@ function bindForms(){
   bindAuth();bindForms();bindSettings();bindImport();
   const u=me();
   if(token()&&u){state.user=u;
-    api("/api/me").then(function(d){state.user=d.user;localStorage.setItem(LS_USER,JSON.stringify(d.user));showApp(true);})
+    api("/api/me").then(function(d){state.user=d.user;saveUser(d.user);showApp(true);})
     .catch(function(){showApp(false);});
   }else{showApp(false);}
 })();
