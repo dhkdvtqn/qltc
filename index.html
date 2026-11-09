@@ -625,11 +625,12 @@ async function loadDashboard(){
     const flowMap={};(d.flow||[]).forEach(function(r){flowMap[r.month]=r;});
     const flow12=[];for(let i=1;i<=12;i++){const mm=y+"-"+String(i).padStart(2,"0");flow12.push(flowMap[mm]||{month:mm,income:0,expense:0});}
     drawFlow(flow12);
-    const tot=(d.byCategory||[]).reduce(function(s,x){return s+Number(x.total||0);},0);
-    drawPie($("catPie"),d.byCategory||[]);
-    $("catBreak").innerHTML=(d.byCategory||[]).length?(d.byCategory||[]).map(function(x){
+    const pieRows=assignPieColors(d.byCategory||[]);
+    const tot=pieRows.reduce(function(s,x){return s+Number(x.total||0);},0);
+    drawPie($("catPie"),pieRows);
+    $("catBreak").innerHTML=pieRows.length?pieRows.map(function(x){
       const p=tot?Math.round(Number(x.total)/tot*100):0;
-      return '<div class="catbar"><span class="nm">'+esc(x.category||"Khác")+'</span><span class="tr"><i style="width:'+p+'%;background:'+esc(x.color||"#2563EB")+'"></i></span><span class="pc">'+p+'%</span><span style="width:110px;text-align:right">'+fmt(x.total)+'</span></div>';}).join(""):'<p class="muted">Chưa có chi tiêu trong tháng này.</p>';
+      return '<div class="catbar"><span class="nm">'+esc(x.category)+'</span><span class="tr"><i style="width:'+p+'%;background:'+esc(x.color)+'"></i></span><span class="pc">'+p+'%</span><span style="width:110px;text-align:right">'+fmt(x.total)+'</span></div>';}).join(""):'<p class="muted">Chưa có chi tiêu trong tháng này.</p>';
     $("budgetDash").innerHTML=(d.budgets||[]).length?(d.budgets||[]).map(function(b){
       const p=b.limit_amount?Math.round(b.spent/b.limit_amount*100):0;
       const cls=p>=100?"over":(p>=80?"warn":"");
@@ -652,20 +653,60 @@ function drawFlow(flow){
     ctx.fillStyle="#64748B";ctx.font="11px sans-serif";ctx.fillText("T"+(+r.month.slice(5)),x+8,176);
   });
 }
-const PIE_COLORS=["#2563EB","#F59E0B","#16A34A","#DC2626","#7C3AED","#0891B2","#DB2777","#65A30D","#EA580C","#0D9488"];
+const PIE_COLORS=["#2563EB","#F97316","#16A34A","#DC2626","#7C3AED","#0891B2","#DB2777","#65A30D","#B45309","#4F46E5","#0D9488","#EAB308"];
+function assignPieColors(rows){
+  // Moi hang muc mot mau rieng, de phan biet. Luot 1: giu mau anh da chon
+  // (khi mau do chua ai dung); luot 2: hang muc con lai (mau mac dinh
+  // #64748B hoac trung mau) lay mau tiep theo trong bang mau.
+  const used=new Set();
+  const list=(rows||[]).map(function(x){
+    return {category:x.category||"Khác",total:x.total,color:String(x.color||"").trim().toUpperCase()};
+  });
+  list.forEach(function(x){
+    if(x.color&&x.color!=="#64748B"&&!used.has(x.color))used.add(x.color);
+    else x.color="";
+  });
+  let pi=0;
+  list.forEach(function(x){
+    if(!x.color){do{x.color=PIE_COLORS[pi++%PIE_COLORS.length];}while(used.has(x.color));used.add(x.color);}
+  });
+  return list;
+}
 function drawPie(cv,rows){
   if(!cv)return;const ctx=cv.getContext("2d");
   ctx.clearRect(0,0,cv.width,cv.height);
   const tot=(rows||[]).reduce(function(s,x){return s+Number(x.total||0);},0);
   if(!tot||!rows.length){ctx.fillStyle="#64748B";ctx.font="14px sans-serif";ctx.fillText("Chưa có dữ liệu.",10,30);return;}
-  const cx=cv.width/2,cy=cv.height/2,r=Math.min(cv.width,cv.height)/2-12;
+  const cx=cv.width/2,cy=cv.height/2,r=Math.min(cv.width,cv.height)/2-46;
   let a=-Math.PI/2;
-  rows.forEach(function(x,i){
-    const a2=a+Number(x.total)/tot*Math.PI*2;
+  const labels=[];
+  rows.forEach(function(x){
+    const frac=Number(x.total)/tot,a2=a+frac*Math.PI*2,mid=(a+a2)/2;
     ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,a,a2);ctx.closePath();
-    ctx.fillStyle=x.color||PIE_COLORS[i%PIE_COLORS.length];ctx.fill();
+    ctx.fillStyle=x.color||"#64748B";ctx.fill();
     ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.stroke();
+    const pct=Math.round(frac*1000)/10;
+    labels.push({mid:mid,text:(x.category||"Khác")+" "+pct+"%",y:cy+Math.sin(mid)*(r+18)});
     a=a2;
+  });
+  // Callout: duong noi tu lat cat ra ngoai + ghi chu ten + %; dan nhan theo
+  // chieu doc de khong chong len nhau.
+  labels.sort(function(p,q){return p.y-q.y;});
+  let prevY=-100;
+  labels.forEach(function(lb){
+    if(lb.y-prevY<16)lb.y=prevY+16;
+    if(lb.y<12)lb.y=12;if(lb.y>cv.height-8)lb.y=cv.height-8;
+    prevY=lb.y;
+  });
+  ctx.font="12px sans-serif";ctx.textBaseline="middle";
+  labels.forEach(function(lb){
+    const cos=Math.cos(lb.mid),sin=Math.sin(lb.mid);
+    const ex=cx+cos*(r+2),ey=cy+sin*(r+2);
+    const lx=cx+cos*(r+18),ly=lb.y;
+    ctx.strokeStyle="#94A3B8";ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(ex,ey);ctx.lineTo(lx,ly);ctx.stroke();
+    ctx.fillStyle="#334155";ctx.textAlign=cos>=0?"left":"right";
+    ctx.fillText(lb.text,lx+(cos>=0?4:-4),ly);
   });
 }
 
@@ -860,9 +901,9 @@ function statRange(){
 }
 function statListHTML(rows,total){
   if(!rows.length)return '<p class="muted">Chưa có dữ liệu trong kỳ này.</p>';
-  return rows.map(function(x,i){
+  return rows.map(function(x){
     const p=total?Math.round(Number(x.total)/total*100):0;
-    return '<div class="catbar"><span class="nm">'+esc(x.category||"Khác")+'</span><span class="tr"><i style="width:'+p+'%;background:'+esc(x.color||PIE_COLORS[i%PIE_COLORS.length])+'"></i></span><span class="pc">'+p+'%</span><span style="width:110px;text-align:right">'+fmt(x.total)+'</span></div>';
+    return '<div class="catbar"><span class="nm">'+esc(x.category||"Khác")+'</span><span class="tr"><i style="width:'+p+'%;background:'+esc(x.color||"#64748B")+'"></i></span><span class="pc">'+p+'%</span><span style="width:110px;text-align:right">'+fmt(x.total)+'</span></div>';
   }).join("");
 }
 function trendLabel(l){
@@ -925,8 +966,9 @@ async function loadStats(){
     const q=r?("?kind="+statState.kind+"&from="+encodeURIComponent(r.from)+"&to="+encodeURIComponent(r.to)):("?kind="+statState.kind);
     const d=await api("/api/stats"+q);
     $("statPieTitle").textContent="🍰 Cơ cấu "+(statState.kind==="income"?"thu":"chi")+(r?" • "+r.label:" • toàn bộ thời gian");
-    drawPie($("statPie"),d.byCategory||[]);
-    $("statList").innerHTML=statListHTML(d.byCategory||[],d.total||0);
+    const statPieRows=assignPieColors(d.byCategory||[]);
+    drawPie($("statPie"),statPieRows);
+    $("statList").innerHTML=statListHTML(statPieRows,d.total||0);
     $("statRangeLabel").textContent=(r?r.label:"Toàn bộ thời gian")+" • Tổng "+(statState.kind==="income"?"thu":"chi")+": "+fmt(d.total||0);
   }catch(e){toast(e.message);}
 }
