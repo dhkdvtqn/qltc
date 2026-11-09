@@ -39,13 +39,11 @@ Tóm tắt:
 
 ## 3. Điền Worker URL vào website
 
-- Cách 1 (khuyên dùng): sửa `config.js`, điền URL Worker vào
-  `window.MYMONEY_API_BASE`, đẩy lên GitHub.
-- Cách 2: mở website, vào **Cài đặt → Địa chỉ Worker API**, dán URL rồi Lưu
-  (lưu vào localStorage của trình duyệt đó).
+Sửa `config.js`, điền URL Worker vào `window.MYMONEY_API_BASE`, đẩy lên
+GitHub. Địa chỉ Worker **không** nhập được trên giao diện nữa (đã bỏ ô nhập
+ở màn hình đăng nhập và ở Cài đặt).
 
-Nếu chưa điền URL, Dashboard sẽ hiện hướng dẫn điền URL thay vì báo lỗi
-khó hiểu. Lưu ý: Worker cần cho phép domain GitHub Pages gọi tới — trong
+Lưu ý: Worker cần cho phép domain GitHub Pages gọi tới — trong
 `wrangler.jsonc` của gói Worker, `ALLOWED_ORIGIN` để `*` khi test, lên
 production nên đặt đúng `https://dhkdvtqn.github.io`.
 

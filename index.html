@@ -116,7 +116,6 @@ canvas{width:100%;height:180px;display:block}
 <!-- ===== AUTH ===== -->
 <div id="authView" class="auth hidden">
   <div class="logo"><div class="mark">💰</div><h1>MyMoney</h1><p class="sub">Quản lý tài chính cá nhân</p></div>
-  <div id="authSetup" class="setup hidden">Chưa có địa chỉ Worker API. Nhập URL Worker <b>mymoney-api</b> mới của anh vào Cài đặt ở dưới, hoặc sửa <code>config.js</code> rồi đẩy lại GitHub.</div>
   <div class="tabs"><button id="tabLogin" class="on" type="button">Đăng nhập</button><button id="tabRegister" type="button">Đăng ký</button></div>
   <div class="card">
     <div id="loginForm">
@@ -135,6 +134,7 @@ canvas{width:100%;height:180px;display:block}
     <div id="forgotForm" class="hidden">
       <label>Email đã đăng ký</label><input id="forgotEmail" type="email" placeholder="email@vd.com">
       <div style="margin-top:14px"><button class="btn primary block" id="btnForgot" type="button">Gửi link đặt lại mật khẩu</button></div>
+      <p class="muted" style="margin-top:10px">Nếu không nhận được email, nhờ admin đặt lại mật khẩu giúp trong mục Quản trị.</p>
       <button class="linkbtn" id="linkBackLogin" type="button">← Quay lại đăng nhập</button>
     </div>
     <div id="resetForm" class="hidden">
@@ -144,13 +144,6 @@ canvas{width:100%;height:180px;display:block}
     </div>
     <p id="authMsg" class="muted" style="margin-top:10px"></p>
   </div>
-  <div class="card">
-    <h3>⚙️ Địa chỉ Worker API</h3>
-    <label>URL Worker mymoney-api mới</label>
-    <input id="authApiBase" type="url" placeholder="https://mymoney-api.<subdomain>.workers.dev">
-    <div style="margin-top:12px" class="row"><button class="btn block" id="btnSaveApiAuth" type="button">Lưu URL</button><button class="btn block" id="btnTestApiAuth" type="button">Kiểm tra kết nối</button></div>
-    <p id="authApiMsg" class="muted" style="margin-top:8px"></p>
-  </div>
 </div>
 
 <!-- ===== APP ===== -->
@@ -158,8 +151,6 @@ canvas{width:100%;height:180px;display:block}
   <nav class="sidebar" id="sidebar"></nav>
   <div class="wrap">
     <div class="topbar"><div class="brand">💰 MyMoney</div><div class="who" id="whoBox"></div></div>
-    <div id="setupBanner" class="setup hidden">Chưa có địa chỉ Worker API. Vào <b>Cài đặt → Địa chỉ Worker API</b> để nhập URL Worker <b>mymoney-api</b> mới, rồi đăng nhập lại.</div>
-
     <section id="view-dashboard" class="view">
       <div class="row" style="margin-bottom:12px"><h2 style="flex:1">Xin chào, <span id="dashName">bạn</span> 👋</h2><input id="dashMonth" type="month" style="max-width:180px"></div>
       <div class="grid3" style="margin-bottom:12px">
@@ -267,10 +258,11 @@ canvas{width:100%;height:180px;display:block}
 
     <section id="view-settings" class="view hidden">
       <h2>Cài đặt</h2>
-      <div class="card"><h3>⚙️ Địa chỉ Worker API</h3>
-        <label>URL Worker mymoney-api</label><input id="setApiBase" type="url" placeholder="https://mymoney-api.<subdomain>.workers.dev">
-        <div style="margin-top:12px" class="row"><button class="btn" id="btnSaveApi" type="button">Lưu URL</button><button class="btn" id="btnTestApi" type="button">Kiểm tra kết nối</button></div>
-        <p id="setApiMsg" class="muted" style="margin-top:8px"></p>
+      <div class="card"><h3>🔑 Đổi mật khẩu</h3>
+        <label>Mật khẩu hiện tại</label><input id="setOldPass" type="password" autocomplete="current-password" placeholder="Mật khẩu hiện tại">
+        <label>Mật khẩu mới (tối thiểu 6 ký tự)</label><input id="setNewPass" type="password" autocomplete="new-password" placeholder="Mật khẩu mới">
+        <div style="margin-top:12px"><button class="btn primary block" id="btnChangePass" type="button">Đổi mật khẩu</button></div>
+        <p id="setPassMsg" class="muted" style="margin-top:8px"></p>
       </div>
       <div class="card"><h3>Hồ sơ</h3>
         <label>Họ tên</label><input id="setName">
@@ -283,8 +275,8 @@ canvas{width:100%;height:180px;display:block}
 
     <section id="view-admin" class="view hidden">
       <h2>🛡️ Quản trị</h2>
-      <div class="card"><h3>Thống kê hệ thống</h3><div id="adminStats" class="muted">—</div></div>
-      <div class="card"><h3>Người dùng</h3><div id="adminUsers"></div></div>
+      <div class="card"><h3>Thống kê hệ thống</h3><div id="adminStats" class="muted">—</div><p id="adminEmail" class="muted" style="margin-top:8px"></p></div>
+      <div class="card"><h3>Người dùng</h3><p class="muted">Admin bấm “Đặt lại MK” để đặt mật khẩu mới cho user (dùng khi user quên mật khẩu mà email chưa gửi được).</p><div id="adminUsers"></div></div>
     </section>
   </div>
 
@@ -328,9 +320,10 @@ canvas{width:100%;height:180px;display:block}
 <script>
 "use strict";
 /* ================= Cấu hình & tiện ích ================= */
-const LS_TOKEN="mymoney_token", LS_API="mymoney_api_base", LS_USER="mymoney_user";
-function apiBase(){return (localStorage.getItem(LS_API)||"")||(window.MYMONEY_API_BASE||"").trim();}
-function setApiBase(v){localStorage.setItem(LS_API,(v||"").trim().replace(/\/+$/,""));}
+const LS_TOKEN="mymoney_token", LS_USER="mymoney_user";
+// Địa chỉ Worker API chỉ lấy từ config.js (anh sửa file đó rồi đẩy lại GitHub),
+// không cho nhập/sửa trên giao diện nữa.
+function apiBase(){return (window.MYMONEY_API_BASE||"").trim().replace(/\/+$/,"");}
 function token(){return localStorage.getItem(LS_TOKEN)||"";}
 function me(){try{return JSON.parse(localStorage.getItem(LS_USER)||"null");}catch(e){return null;}}
 function todayVN(){return new Date().toLocaleString("en-CA",{timeZone:"Asia/Ho_Chi_Minh"}).slice(0,10);}
@@ -360,7 +353,7 @@ function show(id,on){$(id).classList.toggle("hidden",!on);}
 async function api(path,opts){
   opts=opts||{};
   const base=apiBase();
-  if(!base)throw new Error("Chưa có địa chỉ Worker API. Vào Cài đặt để nhập URL Worker mymoney-api.");
+  if(!base)throw new Error("Chưa cấu hình Worker API trong config.js.");
   const res=await fetch(base+path,{method:opts.method||"GET",headers:{"Content-Type":"application/json",...(token()?{Authorization:"Bearer "+token()}:{})},body:opts.body?JSON.stringify(opts.body):undefined});
   let data=null;try{data=await res.json();}catch(e){}
   if(!res.ok){if(res.status===401){logout(true);}throw new Error((data&&data.error)||("Lỗi "+res.status));}
@@ -436,8 +429,6 @@ function showAuth(){
   show("loginForm",true);show("registerForm",false);show("forgotForm",false);show("resetForm",false);
   $("tabLogin").classList.add("on");$("tabRegister").classList.remove("on");
   if(params.get("token")){show("loginForm",false);show("resetForm",true);}
-  show("authSetup",!apiBase());
-  $("authApiBase").value=apiBase();
 }
 
 /* ================= Auth ================= */
@@ -465,13 +456,6 @@ function bindAuth(){
     try{await api("/api/auth/reset-password",{method:"POST",body:{token:t,password:$("resetPass").value}});toast("Đặt lại mật khẩu xong, mời đăng nhập");history.replaceState(null,"",location.pathname);show("resetForm",false);show("loginForm",true);}
     catch(e){$("authMsg").textContent=e.message;}
   };
-  $("btnSaveApiAuth").onclick=function(){setApiBase($("authApiBase").value);$("authApiMsg").textContent="Đã lưu URL Worker. Mời đăng nhập.";show("authSetup",!apiBase());};
-  $("btnTestApiAuth").onclick=testApi.bind(null,"authApiMsg");
-}
-async function testApi(msgId){
-  try{const r=await fetch(apiBase()+"/api/health");const d=await r.json();
-    $(msgId).textContent=d.success?"Kết nối OK — database: "+(d.database||"ok"):"Không kết nối được: "+(d.error||"");
-  }catch(e){$(msgId).textContent="Không kết nối được Worker: "+e.message;}
 }
 
 /* ================= Dữ liệu dùng chung ================= */
@@ -498,7 +482,6 @@ function catOptions(kind){
 
 /* ================= Dashboard ================= */
 async function loadDashboard(){
-  if(!apiBase()){show("setupBanner",true);return;}show("setupBanner",false);
   try{
     await loadBase();
     const m=$("dashMonth").value||monthVN();
@@ -734,7 +717,6 @@ function bindImport(){
 
 /* ================= Cài đặt / Admin ================= */
 function fillSettings(){
-  $("setApiBase").value=apiBase();
   if(state.user){$("setName").value=state.user.full_name||"";$("setCurrency").value=state.user.currency||"VND";$("setTz").value=state.user.timezone||"Asia/Ho_Chi_Minh";}
 }
 async function loadAdmin(){
@@ -742,15 +724,21 @@ async function loadAdmin(){
   try{
     const s=await api("/api/admin/stats");
     $("adminStats").textContent="Database: "+esc(s.database||"mymoney-db")+" • Người dùng: "+(s.tables.users||0)+" • Ví: "+(s.tables.accounts||0)+" • Giao dịch: "+(s.tables.transactions||0)+" • Ngân sách: "+(s.tables.budgets||0)+" • Mục tiêu: "+(s.tables.goals||0);
+    try{const e=await api("/api/admin/email-status");$("adminEmail").textContent=e.configured?("Email reset mật khẩu: đã cấu hình (gửi từ "+e.from+")"):("Email reset mật khẩu: CHƯA cấu hình — user quên mật khẩu thì admin đặt lại MK ở dưới, hoặc cấu hình Resend theo README.");}catch(err){$("adminEmail").textContent="";}
     const u=await api("/api/admin/users");
     $("adminUsers").innerHTML=(u.users||[]).map(function(x){
-      return '<div class="list-item"><span class="ic">👤</span><div class="mid"><div class="t">'+esc(x.full_name||x.email)+'</div><div class="s">'+esc(x.email)+" • "+esc(x.role)+" • "+(x.tx_count||0)+" giao dịch • "+esc(x.status)+'</div></div>'+(x.id!==state.user.id?'<button class="btn small" data-lock="'+x.id+'" data-st="'+x.status+'">'+(x.status==="active"?"Khóa":"Mở khóa")+'</button>':"")+'</div>';}).join("");
+      return '<div class="list-item"><span class="ic">👤</span><div class="mid"><div class="t">'+esc(x.full_name||x.email)+'</div><div class="s">'+esc(x.email)+" • "+esc(x.role)+" • "+(x.tx_count||0)+" giao dịch • "+esc(x.status)+'</div></div>'+(x.id!==state.user.id?'<button class="btn small" data-lock="'+x.id+'" data-st="'+x.status+'">'+(x.status==="active"?"Khóa":"Mở khóa")+'</button><button class="btn small" data-reset="'+x.id+'">Đặt lại MK</button>':"")+'</div>';}).join("");
     $("adminUsers").querySelectorAll("button[data-lock]").forEach(function(b){b.onclick=async function(){try{await api("/api/admin/users/"+b.dataset.lock+"/"+(b.dataset.st==="active"?"lock":"unlock"),{method:"POST"});toast("Đã cập nhật");loadAdmin();}catch(e){toast(e.message);}};});
+    $("adminUsers").querySelectorAll("button[data-reset]").forEach(function(b){b.onclick=async function(){const pw=prompt("Nhập mật khẩu mới cho user (tối thiểu 6 ký tự):");if(!pw)return;try{await api("/api/admin/users/"+b.dataset.reset+"/reset-password",{method:"POST",body:{new_password:pw}});toast("Đã đặt lại mật khẩu — báo user đăng nhập bằng mật khẩu mới");}catch(e){toast(e.message);}};});
   }catch(e){toast(e.message);}
 }
 function bindSettings(){
-  $("btnSaveApi").onclick=function(){setApiBase($("setApiBase").value);$("setApiMsg").textContent="Đã lưu URL Worker.";};
-  $("btnTestApi").onclick=testApi.bind(null,"setApiMsg");
+  $("btnChangePass").onclick=async function(){
+    const oldP=$("setOldPass").value,newP=$("setNewPass").value;
+    if(!oldP||!newP||newP.length<6){$("setPassMsg").textContent="Nhập đủ mật khẩu hiện tại và mật khẩu mới (tối thiểu 6 ký tự).";return;}
+    try{await api("/api/me/password",{method:"POST",body:{old_password:oldP,new_password:newP}});$("setPassMsg").textContent="Đổi mật khẩu xong — mời đăng nhập lại.";toast("Đổi mật khẩu xong");setTimeout(function(){logout(false);},1200);}
+    catch(e){$("setPassMsg").textContent=e.message;}
+  };
   $("btnSaveProfile").onclick=async function(){
     try{await api("/api/me",{method:"PUT",body:{full_name:$("setName").value.trim(),currency:$("setCurrency").value,timezone:$("setTz").value.trim()||"Asia/Ho_Chi_Minh"}});const u=me();if(u){u.full_name=$("setName").value.trim();u.currency=$("setCurrency").value;localStorage.setItem(LS_USER,JSON.stringify(u));state.user=u;}toast("Đã lưu hồ sơ");}
     catch(e){toast(e.message);}
