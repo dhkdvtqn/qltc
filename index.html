@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#2563EB">
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>MyMoney — Quản lý tài chính cá nhân</title>
 <script src="config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -39,17 +43,19 @@ label{display:block;font-size:14px;font-weight:600;margin:12px 0 6px}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .row>*{flex:1;min-width:140px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;min-width:0}
 .kpi .lbl{font-size:13px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
-.kpi .val{font-size:22px;font-weight:800;margin-top:4px;word-break:break-word}
-.kpi .sub{font-size:13px;color:var(--muted);margin-top:2px}
+.kpi .val{font-size:18px;font-weight:800;margin-top:4px;white-space:nowrap}
+@media (max-width:480px){.grid3{gap:8px}.kpi{padding:10px 8px}}
 .inc{color:var(--income)}.exp{color:var(--expense)}
 .bar{height:10px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:8px}
 .bar>i{display:block;height:100%;background:var(--primary);border-radius:99px}
 .bar.over>i{background:var(--expense)}
 .bar.warn>i{background:var(--warn)}
 .list-item{display:flex;gap:12px;align-items:center;padding:12px 4px;border-bottom:1px solid var(--line)}
+.list-item.click{cursor:pointer;border-radius:10px;padding:12px 8px;margin:0 -8px}
+.list-item.click:active{background:var(--soft)}
 .list-item:last-child{border-bottom:0}
 .list-item .ic{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--soft);flex:none}
 .list-item .mid{flex:1;min-width:0}
@@ -212,14 +218,13 @@ html{touch-action:manipulation}
   <div class="wrap">
     <div class="topbar"><div class="brand">💰 MyMoney</div><div class="who" id="whoBox"></div></div>
     <section id="view-dashboard" class="view">
-      <div class="row" style="margin-bottom:12px"><h2 style="flex:1">Xin chào, <span id="dashName">bạn</span> 👋</h2></div>
       <div class="monthnav"><button type="button" id="dashPrev" aria-label="Tháng trước">‹</button><span class="mlbl" id="dashMonthLabel">Tháng này</span><button type="button" id="dashNext" aria-label="Tháng sau">›</button></div>
       <div class="grid3" style="margin-bottom:12px">
-        <div class="kpi"><div class="lbl">Số dư tháng</div><div class="val" id="kTotal">—</div><div class="sub" id="kTotalSub"></div></div>
-        <div class="kpi"><div class="lbl">Thu</div><div class="val inc" id="kInc">—</div><div class="sub" id="kIncSub"></div></div>
-        <div class="kpi"><div class="lbl">Chi</div><div class="val exp" id="kExp">—</div><div class="sub" id="kExpSub"></div></div>
+        <div class="kpi"><div class="lbl">Dư</div><div class="val" id="kTotal">—</div></div>
+        <div class="kpi"><div class="lbl">Thu</div><div class="val inc" id="kInc">—</div></div>
+        <div class="kpi"><div class="lbl">Chi</div><div class="val exp" id="kExp">—</div></div>
       </div>
-      <div class="card"><h3 id="catPieTitle">🍰 Cơ cấu chi tháng này</h3><div id="catPie"></div><div id="catBreak"></div><p class="muted" style="margin-top:6px">Bấm vào một hạng mục để xem chi tiết các khoản chi.</p></div>
+      <div class="card"><div id="catPie"></div><div id="catBreak"></div><p class="muted" style="margin-top:6px">Bấm vào một hạng mục để xem chi tiết các khoản chi.</p></div>
       <div class="card"><h3 id="budgetTitle">🎯 Ngân sách tháng này</h3><div id="budgetDash"></div></div>
     </section>
 
@@ -369,6 +374,10 @@ html{touch-action:manipulation}
         <p class="muted">Chọn giao diện cho ứng dụng — áp dụng ngay và nhớ cho lần sau.</p>
         <div class="theme-grid" id="themeGrid" style="margin-top:12px"></div>
       </div>
+      <div class="card"><h3>⛶ Toàn màn hình</h3>
+        <p class="muted">Mở toàn màn hình để ẩn thanh địa chỉ và các nút của trình duyệt. Để lần sau mở lên là toàn màn hình luôn: thêm trang này vào Màn hình chính (mở menu trình duyệt → "Thêm vào Màn hình chính" / "Add to Home Screen") rồi mở app từ biểu tượng ngoài màn hình chính.</p>
+        <div style="margin-top:12px"><button class="btn primary block" id="btnFullscreen" type="button">Mở toàn màn hình</button></div>
+      </div>
       <div class="card"><button class="btn danger block" id="btnLogout" type="button">Đăng xuất</button></div>
     </section>
 
@@ -410,7 +419,8 @@ html{touch-action:manipulation}
 <div id="catDetailModal" class="modal hidden">
   <div class="sheet">
     <h2 id="catDetailTitle"></h2>
-    <p id="catDetailTotal" class="muted" style="margin:6px 0 12px"></p>
+    <p id="catDetailTotal" class="muted" style="margin:6px 0 4px"></p>
+    <p class="muted" style="margin-bottom:10px">Bấm vào một khoản chi để sửa.</p>
     <div id="catDetailList"></div>
     <div style="margin-top:14px"><button class="btn block" id="btnCloseCatDetail" type="button">Đóng</button></div>
   </div>
@@ -545,7 +555,7 @@ function go(view){
 }
 function showApp(on){
   show("authView",!on);show("appView",on);
-  if(on){buildNav();$("whoBox").textContent=(state.user?state.user.email:"")+(state.user&&state.user.role==="admin"?" • Admin":"");$("dashName").textContent=(state.user&&state.user.full_name)||"bạn";go("dashboard");}
+  if(on){buildNav();$("whoBox").textContent=(state.user?state.user.email:"")+(state.user&&state.user.role==="admin"?" • Admin":"");go("dashboard");}
   else{showAuth();}
 }
 function showAuth(){
@@ -656,6 +666,15 @@ function catOptions(kind){
     return '<option value="'+c.id+'">'+esc((p?p.name+" › ":"")+c.name)+"</option>";}).join("");
 }
 
+/* Thu nho chu so tien trong o KPI cho den khi vua 1 dong (khong xuong dong,
+   khong cat so). Chi ap dung khi o dang hien (clientWidth>0). */
+function fitKpi(el){
+  if(!el||!el.clientWidth)return;
+  el.style.fontSize="";
+  let fs=18;
+  while(fs>11&&el.scrollWidth>el.clientWidth){fs--;el.style.fontSize=fs+"px";}
+}
+
 /* ================= Dashboard ================= */
 function dashMonthLabel(m){return "Tháng "+(+m.slice(5))+"/"+m.slice(0,4);}
 function shiftDashMonth(delta){
@@ -671,13 +690,12 @@ async function loadDashboard(){
     const lbl=dashMonthLabel(m);
     $("dashMonthLabel").textContent=lbl;
     const d=await api("/api/dashboard?month="+encodeURIComponent(m)+"&year="+encodeURIComponent(m.slice(0,4)));
-    // So du thang = Thu - Chi trong thang dang xem (khong phai so du luy ke).
+    // O "Du" = Thu - Chi trong thang dang xem (khong phai so du luy ke).
     $("kTotal").textContent=fmt(d.saving);
     $("kTotal").className="val "+(d.saving>=0?"inc":"exp");
-    $("kTotalSub").textContent="Thu − Chi trong tháng";
-    $("kInc").textContent=fmt(d.income);$("kIncSub").textContent="Tháng trước "+fmt(d.prevIncome)+" ("+pctChange(d.income,d.prevIncome)+")";
-    $("kExp").textContent=fmt(d.expense);$("kExpSub").textContent="Tháng trước "+fmt(d.prevExpense)+" ("+pctChange(d.expense,d.prevExpense)+")";
-    $("catPieTitle").textContent="🍰 Cơ cấu chi "+lbl.toLowerCase();
+    $("kInc").textContent=fmt(d.income);
+    $("kExp").textContent=fmt(d.expense);
+    ["kTotal","kInc","kExp"].forEach(function(id){fitKpi($(id));});
     $("budgetTitle").textContent="🎯 Ngân sách "+lbl.toLowerCase();
     const pieRows=assignPieColors(d.byCategory||[]);
     const tot=pieRows.reduce(function(s,x){return s+Number(x.total||0);},0);
@@ -710,7 +728,17 @@ async function openCatDetail(name){
     const tot=rows.reduce(function(s,t){return s+Number(t.amount||0);},0);
     $("catDetailTotal").textContent=lbl+" • "+rows.length+" khoản • Tổng "+fmt(tot);
     $("catDetailList").innerHTML=rows.length?rows.map(function(t){
-      return '<div class="list-item"><div class="mid"><div class="t">'+esc(t.note||name||"Khoản chi")+'</div><div class="s">'+esc(t.transaction_date)+" • "+esc(t.account_name||accName(t.account_id))+(t.tags?" • "+esc(t.tags):"")+'</div></div><div class="amt exp">− '+fmt(t.amount)+'</div></div>';}).join(""):'<p class="muted">Không có khoản chi nào trong '+lbl.toLowerCase()+'.</p>';
+      return '<div class="list-item click" data-txid="'+t.id+'"><div class="mid"><div class="t">'+esc(t.note||name||"Khoản chi")+'</div><div class="s">'+esc(t.transaction_date)+" • "+esc(t.account_name||accName(t.account_id))+(t.tags?" • "+esc(t.tags):"")+'</div></div><div class="amt exp">− '+fmt(t.amount)+'</div><span style="color:var(--muted)">›</span></div>';}).join(""):'<p class="muted">Không có khoản chi nào trong '+lbl.toLowerCase()+'.</p>';
+    // Bam vao 1 khoan chi de sua ngay tai cho.
+    $("catDetailList").querySelectorAll(".list-item.click").forEach(function(el){
+      el.onclick=function(){
+        const id=el.getAttribute("data-txid");
+        const tx=rows.find(function(x){return String(x.id)===id;});
+        if(!tx)return;
+        show("catDetailModal",false);
+        openTxModal("expense",tx);
+      };
+    });
   }catch(e){$("catDetailTotal").textContent="Không tải được danh sách.";}
 }
 /* ================= Bieu do SVG (vector, khong vo khi doi co giao dien) ================= */
@@ -737,7 +765,7 @@ function explodeSlice(g,on){
   const mid=parseFloat(g.getAttribute("data-mid")||"0");
   g.style.transform="translate("+(Math.cos(mid)*10).toFixed(1)+"px,"+(Math.sin(mid)*10).toFixed(1)+"px)";
 }
-const PIE_CX=320,PIE_CY=146,PIE_R=104;
+const PIE_CX=320,PIE_CY=146,PIE_R=125;
 function sliceIndexAt(rows,total,vx,vy){
   // Tim lat pie theo vi tri cham (toa do viewBox): tinh goc quanh tam roi
   // doi ra lat tuong ung — lat mong van bam duoc, ke ca khi bam vao nhan.
@@ -940,6 +968,9 @@ function openTxModal(kind,tx){
   $("fAccount").value=tx?tx.account_id:(state.accounts[0]?state.accounts[0].id:"");
   $("fToAccount").value=tx?(tx.transfer_to_account_id||""):(state.accounts[1]?state.accounts[1].id:"");
   $("fNote").value=tx?tx.note||"":"";$("fTags").value=tx?tx.tags||"":"";
+  // Nap dung danh muc cua giao dich khi sua (truoc day form sua de danh muc
+  // mac dinh o muc dau tien, luu lai la doi nham danh muc).
+  if(tx&&tx.category_id)$("fCategory").value=tx.category_id;
   ["fNoteSug","fTagsSug"].forEach(function(id){const el=$(id);if(el)el.classList.add("hidden");});
   // Nap san giao dich thang nay de co du lieu goi y (neu chua co).
   if(!state.tx.length){api("/api/transactions?month="+encodeURIComponent(monthVN())).then(function(d){state.tx=d.transactions||[];}).catch(function(){});}
@@ -1264,6 +1295,7 @@ async function loadStats(){
       const exp=await api("/api/stats?kind=expense");
       const sv=inc.total-exp.total;
       $("statSummary").innerHTML='<div class="grid3"><div class="kpi"><div class="lbl">Tổng thu</div><div class="val inc">'+fmt(inc.total)+'</div></div><div class="kpi"><div class="lbl">Tổng chi</div><div class="val exp">'+fmt(exp.total)+'</div></div><div class="kpi"><div class="lbl">Tiết kiệm</div><div class="val">'+fmt(sv)+'</div></div></div>';
+      $("statSummary").querySelectorAll(".val").forEach(fitKpi);
     }
     const q=r?("?kind="+statState.kind+"&from="+encodeURIComponent(r.from)+"&to="+encodeURIComponent(r.to)):("?kind="+statState.kind);
     const d=await api("/api/stats"+q);
@@ -1388,7 +1420,19 @@ async function loadAdmin(){
     $("adminUsers").querySelectorAll("button[data-reset]").forEach(function(b){b.onclick=async function(){const pw=prompt("Nhập mật khẩu mới cho user (tối thiểu 6 ký tự):");if(!pw)return;try{await api("/api/admin/users/"+b.dataset.reset+"/reset-password",{method:"POST",body:{new_password:pw}});toast("Đã đặt lại mật khẩu — báo user đăng nhập bằng mật khẩu mới");}catch(e){toast(e.message);}};});
   }catch(e){toast(e.message);}
 }
+function syncFullscreenBtn(){
+  const b=$("btnFullscreen");if(!b)return;
+  b.textContent=document.fullscreenElement?"Thoát toàn màn hình":"Mở toàn màn hình";
+}
+function toggleFullscreen(){
+  if(document.fullscreenElement){document.exitFullscreen().catch(function(){});return;}
+  if(document.documentElement.requestFullscreen){
+    document.documentElement.requestFullscreen().catch(function(){toast("Trình duyệt không cho mở toàn màn hình.");});
+  }else{toast("Trình duyệt này không hỗ trợ toàn màn hình.");}
+}
 function bindSettings(){
+  $("btnFullscreen").onclick=function(){toggleFullscreen();};
+  document.addEventListener("fullscreenchange",syncFullscreenBtn);
   $("btnChangePass").onclick=async function(){
     const oldP=$("setOldPass").value,newP=$("setNewPass").value;
     if(!oldP||!newP||newP.length<6){$("setPassMsg").textContent="Nhập đủ mật khẩu hiện tại và mật khẩu mới (tối thiểu 6 ký tự).";return;}
