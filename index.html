@@ -283,6 +283,7 @@ html{touch-action:pan-x pan-y}
         <label>Ví</label><select id="recAccount"></select>
         <label>Danh mục</label><select id="recCat"></select>
         <label><input type="checkbox" id="recAuto" style="width:auto;min-height:0"> Tự động ghi khi đến hạn (không tick = chỉ nhắc)</label>
+        <p id="recAccMsg" class="muted hidden" style="margin-top:8px">⚠️ Bạn chưa có ví nào — tạo ví ở mục Ví trước rồi mới thêm khoản định kỳ.</p>
         <div style="margin-top:14px"><button class="btn primary block" id="btnAddRec" type="button">Thêm khoản định kỳ</button></div>
         <p class="muted" style="margin-top:8px">Worker hiện chưa có API sửa/xóa khoản định kỳ — thêm xong chỉ xem được trong danh sách.</p>
       </div>
@@ -1005,10 +1006,11 @@ function assignPieColors(rows){
 
 
 /* ================= Giao dịch ================= */
-function openTxModal(kind,tx){
+async function openTxModal(kind,tx){
   state.txKind=kind||"expense";state.editingId=tx?tx.id:null;
   $("txModalTitle").textContent=tx?"Sửa giao dịch":"Thêm giao dịch";
   $("txFormMsg").textContent="";
+  if(!state.accounts.length){try{await loadBase();}catch(e){}}
   fillAccountSelects();
   setKindUI(state.txKind);
   $("fAmount").value=tx?tx.amount:"";
@@ -1019,6 +1021,10 @@ function openTxModal(kind,tx){
   // Nap dung danh muc cua giao dich khi sua (truoc day form sua de danh muc
   // mac dinh o muc dau tien, luu lai la doi nham danh muc).
   if(tx&&tx.category_id)$("fCategory").value=tx.category_id;
+  // Chua co vi thi bao ngay + khoa nut Luu (gui account_id=0 se bi loi khoa ngoai).
+  const noAcc=!state.accounts.length;
+  $("btnSaveTx").disabled=noAcc;
+  if(noAcc)$("txFormMsg").textContent="Bạn chưa có ví nào — hãy tạo ví ở mục Ví trước, rồi quay lại thêm giao dịch.";
   ["fNoteSug","fTagsSug"].forEach(function(id){const el=$(id);if(el)el.classList.add("hidden");});
   // Nap san giao dich thang nay de co du lieu goi y (neu chua co).
   if(!state.tx.length){api("/api/transactions?month="+encodeURIComponent(monthVN())).then(function(d){state.tx=d.transactions||[];}).catch(function(){});}
@@ -1220,6 +1226,9 @@ async function loadBudgets(){
 /* ================= Định kỳ ================= */
 async function loadRecurring(){
   try{await loadBase();
+    const noAcc=!state.accounts.length;
+    show("recAccMsg",noAcc);
+    $("btnAddRec").disabled=noAcc;
     const d=await api("/api/recurrings");state.recurrings=d.recurrings||[];
     $("recList").innerHTML=state.recurrings.length?state.recurrings.map(function(r){
       return '<div class="list-item"><span class="ic">🔁</span><div class="mid"><div class="t">'+esc(r.note||catName(r.category_id))+'</div><div class="s">Ngày '+r.day_of_month+' hàng tháng • '+esc(accName(r.account_id))+" • "+(r.auto_create?"Tự động ghi":"Nhắc xác nhận")+'</div></div><div class="amt '+(r.kind==="income"?"inc":"exp")+'">'+(r.kind==="income"?"+":"−")+" "+fmt(r.amount)+'</div></div>';}).join(""):'<p class="muted">Chưa có khoản định kỳ nào.</p>';
@@ -1528,6 +1537,7 @@ function bindForms(){
   bindSuggest("fNote","fNoteSug","notes");
   bindSuggest("fTags","fTagsSug","tags");
   $("btnSaveTx").onclick=async function(){
+    if(!state.accounts.length){$("txFormMsg").textContent="Bạn chưa có ví nào — hãy tạo ví ở mục Ví trước, rồi quay lại thêm giao dịch.";return;}
     const amt=parseAmount($("fAmount").value);
     if(!amt||amt<=0){$("txFormMsg").textContent="Nhập số tiền hợp lệ (số nguyên đồng, > 0).";return;}
     const date=$("fDate").value;if(!date){$("txFormMsg").textContent="Chọn ngày giao dịch.";return;}
@@ -1572,6 +1582,8 @@ function bindForms(){
   $("budMonth").addEventListener("change",loadBudgets);
   $("btnAddRec").onclick=async function(){
     const amt=parseAmount($("recAmount").value);if(!amt||amt<=0)return toast("Nhập số tiền hợp lệ");
+    if(!state.accounts.length){try{await loadBase();}catch(e){}}
+    if(!state.accounts.length)return toast("Bạn chưa có ví nào — hãy tạo ví ở mục Ví trước rồi mới thêm khoản định kỳ.");
     try{await api("/api/recurrings",{method:"POST",body:{account_id:+$("recAccount").value,category_id:$("recCat").value?+$("recCat").value:null,kind:$("recKind").value,amount:amt,day_of_month:+$("recDay").value||1,note:$("recNote").value.trim(),auto_create:$("recAuto").checked}});toast("Đã thêm khoản định kỳ");loadRecurring();}
     catch(e){toast(e.message);}
   };
