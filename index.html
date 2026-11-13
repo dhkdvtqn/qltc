@@ -111,7 +111,7 @@ canvas{width:100%;height:180px;display:block}
 .chart-svg .slice text{pointer-events:none}
 .chart-svg .barcol{cursor:pointer}
 .chart-svg .vallbl{font-size:11px;font-weight:700;paint-order:stroke;stroke:var(--card);stroke-width:3px}
-.chart-svg .pielbl{font-size:13px;fill:var(--text);pointer-events:none}
+.chart-svg .pielbl{font-size:14px;font-weight:700;fill:var(--text);pointer-events:none}
 .chart-svg line{pointer-events:none}
 .chart-svg .axis{font-size:11px;fill:var(--muted)}
 #chartTip{position:fixed;z-index:90;max-width:270px;background:#0F172A;color:#fff;padding:10px 12px;border-radius:10px;font-size:14px;line-height:1.5;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.3)}
@@ -123,7 +123,7 @@ canvas{width:100%;height:180px;display:block}
 .theme-opt.on{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary)}
 .theme-opt .dots{display:flex;gap:3px}
 .theme-opt .dots i{width:14px;height:14px;border-radius:50%;display:block}
-html{touch-action:manipulation}
+html{touch-action:pan-x pan-y}
 /* Dieu huong thang o Tong quan */
 .monthnav{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:6px;margin-bottom:12px}
 .monthnav button{border:0;background:var(--soft);width:44px;height:44px;min-height:44px;border-radius:12px;font-size:26px;line-height:1;color:var(--primary);font-weight:700;padding:0}
@@ -220,9 +220,9 @@ html{touch-action:manipulation}
     <section id="view-dashboard" class="view">
       <div class="monthnav"><button type="button" id="dashPrev" aria-label="Tháng trước">‹</button><span class="mlbl" id="dashMonthLabel">Tháng này</span><button type="button" id="dashNext" aria-label="Tháng sau">›</button></div>
       <div class="grid3" style="margin-bottom:12px">
-        <div class="kpi"><div class="lbl">Dư</div><div class="val" id="kTotal">—</div></div>
         <div class="kpi"><div class="lbl">Thu</div><div class="val inc" id="kInc">—</div></div>
         <div class="kpi"><div class="lbl">Chi</div><div class="val exp" id="kExp">—</div></div>
+        <div class="kpi"><div class="lbl">Dư</div><div class="val" id="kTotal">—</div></div>
       </div>
       <div class="card"><div id="catPie"></div><div id="catBreak"></div><p class="muted" style="margin-top:6px">Bấm vào một hạng mục để xem chi tiết các khoản chi.</p></div>
       <div class="card"><h3 id="budgetTitle">🎯 Ngân sách tháng này</h3><div id="budgetDash"></div></div>
@@ -327,7 +327,7 @@ html{touch-action:manipulation}
         <p class="muted" id="statRangeLabel" style="margin-top:8px"></p>
       </div>
       <div class="card hidden" id="statSummaryCard"><h3>📌 Tóm lược toàn bộ thời gian</h3><div id="statSummary"></div></div>
-      <div class="card" id="statPieCard"><h3 id="statPieTitle">🍰 Cơ cấu chi</h3><div id="statPie"></div><div id="statList"></div></div>
+      <div class="card" id="statPieCard"><div id="statPie"></div><div id="statList"></div><p class="muted" style="margin-top:6px">Bấm vào một hạng mục để xem lịch sử thu/chi.</p></div>
       <div class="card hidden" id="statTrendCard"><h3>📈 Khuynh hướng thu – chi</h3><canvas id="statLine" width="640" height="240"></canvas><p class="muted">■ Thu &nbsp; ■ Chi</p><div id="statTrendList"></div></div>
     </section>
 
@@ -375,7 +375,7 @@ html{touch-action:manipulation}
         <div class="theme-grid" id="themeGrid" style="margin-top:12px"></div>
       </div>
       <div class="card"><h3>⛶ Toàn màn hình</h3>
-        <p class="muted">Mở toàn màn hình để ẩn thanh địa chỉ và các nút của trình duyệt. Để lần sau mở lên là toàn màn hình luôn: thêm trang này vào Màn hình chính (mở menu trình duyệt → "Thêm vào Màn hình chính" / "Add to Home Screen") rồi mở app từ biểu tượng ngoài màn hình chính.</p>
+        <p class="muted">Mở toàn màn hình để ẩn thanh địa chỉ và các nút của trình duyệt. Để lần sau mở lên là toàn màn hình luôn: thêm trang này vào Màn hình chính rồi mở app từ biểu tượng ngoài màn hình chính. Trên iPhone, chỉ trình duyệt Safari mới làm được việc này (mở trang bằng Safari → bấm Chia sẻ → Thêm vào Màn hình chính); Chrome trên iPhone không hỗ trợ mở web toàn màn hình.</p>
         <div style="margin-top:12px"><button class="btn primary block" id="btnFullscreen" type="button">Mở toàn màn hình</button></div>
       </div>
       <div class="card"><button class="btn danger block" id="btnLogout" type="button">Đăng xuất</button></div>
@@ -420,7 +420,7 @@ html{touch-action:manipulation}
   <div class="sheet">
     <h2 id="catDetailTitle"></h2>
     <p id="catDetailTotal" class="muted" style="margin:6px 0 4px"></p>
-    <p class="muted" style="margin-bottom:10px">Bấm vào một khoản chi để sửa.</p>
+    <p class="muted" id="catDetailHint" style="margin-bottom:10px">Bấm vào một khoản chi để sửa.</p>
     <div id="catDetailList"></div>
     <div style="margin-top:14px"><button class="btn block" id="btnCloseCatDetail" type="button">Đóng</button></div>
   </div>
@@ -727,18 +727,66 @@ async function openCatDetail(name){
     });
     const tot=rows.reduce(function(s,t){return s+Number(t.amount||0);},0);
     $("catDetailTotal").textContent=lbl+" • "+rows.length+" khoản • Tổng "+fmt(tot);
-    $("catDetailList").innerHTML=rows.length?rows.map(function(t){
-      return '<div class="list-item click" data-txid="'+t.id+'"><div class="mid"><div class="t">'+esc(t.note||name||"Khoản chi")+'</div><div class="s">'+esc(t.transaction_date)+" • "+esc(t.account_name||accName(t.account_id))+(t.tags?" • "+esc(t.tags):"")+'</div></div><div class="amt exp">− '+fmt(t.amount)+'</div><span style="color:var(--muted)">›</span></div>';}).join(""):'<p class="muted">Không có khoản chi nào trong '+lbl.toLowerCase()+'.</p>';
-    // Bam vao 1 khoan chi de sua ngay tai cho.
-    $("catDetailList").querySelectorAll(".list-item.click").forEach(function(el){
-      el.onclick=function(){
-        const id=el.getAttribute("data-txid");
-        const tx=rows.find(function(x){return String(x.id)===id;});
-        if(!tx)return;
-        show("catDetailModal",false);
-        openTxModal("expense",tx);
-      };
+    $("catDetailHint").textContent="Bấm vào một khoản chi để sửa.";
+    renderCatDetailList(rows,name,"Không có khoản chi nào trong "+lbl.toLowerCase()+".");
+  }catch(e){$("catDetailTotal").textContent="Không tải được danh sách.";}
+}
+/* Ve danh sach giao dich trong bang chi tiet + bam vao de sua (dung chung
+   cho Tong quan va Thong ke). */
+function renderCatDetailList(rows,name,emptyMsg){
+  $("catDetailList").innerHTML=rows.length?rows.map(function(t){
+    const inc=t.kind==="income";
+    return '<div class="list-item click" data-txid="'+t.id+'"><div class="mid"><div class="t">'+esc(t.note||name||"Khoản chi")+'</div><div class="s">'+esc(t.transaction_date)+" • "+esc(t.account_name||accName(t.account_id))+(t.tags?" • "+esc(t.tags):"")+'</div></div><div class="amt '+(inc?"inc":"exp")+'">'+(inc?"+ ":"− ")+fmt(t.amount)+'</div><span style="color:var(--muted)">›</span></div>';}).join(""):'<p class="muted">'+esc(emptyMsg)+'</p>';
+  $("catDetailList").querySelectorAll(".list-item.click").forEach(function(el){
+    el.onclick=function(){
+      const id=el.getAttribute("data-txid");
+      const tx=rows.find(function(x){return String(x.id)===id;});
+      if(!tx)return;
+      show("catDetailModal",false);
+      openTxModal(tx.kind,tx);
+    };
+  });
+}
+function monthsBetween(from,to){
+  const out=[];let y=+from.slice(0,4),m=+from.slice(5,7);
+  const ey=+to.slice(0,4),em=+to.slice(5,7);
+  while(y<ey||(y===ey&&m<=em)){
+    out.push(y+"-"+String(m).padStart(2,"0"));
+    m++;if(m>12){m=1;y++;}
+    if(out.length>24)break;
+  }
+  return out;
+}
+/* Lich su thu/chi cua 1 danh muc trong ky dang xem o Thong ke */
+async function openStatCatDetail(name){
+  const kind=statState.kind||"expense";
+  const r=statRange();
+  const lbl=r?r.label:"Toàn bộ thời gian";
+  $("catDetailTitle").textContent="🍰 "+(name||"Chưa phân loại");
+  $("catDetailTotal").textContent=lbl+" • Đang tải…";
+  $("catDetailList").innerHTML="";
+  show("catDetailModal",true);
+  try{
+    let all=[],capped=false;
+    const months=r?monthsBetween(r.from,r.to):[];
+    if(r&&months.length<=12){
+      const parts=await Promise.all(months.map(function(mm){return api("/api/transactions?month="+encodeURIComponent(mm));}));
+      parts.forEach(function(d){all=all.concat(d.transactions||[]);});
+    }else{
+      // Ky dai hon 12 thang hoac Tom luoc: lay 500 giao dich gan nhat roi loc.
+      const d=await api("/api/transactions");
+      all=d.transactions||[];capped=all.length>=500;
+    }
+    const rows=all.filter(function(t){
+      if(t.kind!==kind)return false;
+      if(r&&(t.transaction_date<r.from||t.transaction_date>r.to))return false;
+      return (t.category_name||catName(t.category_id)||"")===name;
     });
+    rows.sort(function(a,b){return a.transaction_date<b.transaction_date?1:a.transaction_date>b.transaction_date?-1:0;});
+    const tot=rows.reduce(function(s,t){return s+Number(t.amount||0);},0);
+    $("catDetailTotal").textContent=lbl+" • "+rows.length+" khoản • Tổng "+fmt(tot)+(capped?" (chỉ hiện 500 giao dịch gần nhất)":"");
+    $("catDetailHint").textContent=kind==="income"?"Bấm vào một khoản thu để sửa.":"Bấm vào một khoản chi để sửa.";
+    renderCatDetailList(rows,name,"Không có khoản "+(kind==="income"?"thu":"chi")+" nào trong kỳ này.");
   }catch(e){$("catDetailTotal").textContent="Không tải được danh sách.";}
 }
 /* ================= Bieu do SVG (vector, khong vo khi doi co giao dien) ================= */
@@ -765,7 +813,7 @@ function explodeSlice(g,on){
   const mid=parseFloat(g.getAttribute("data-mid")||"0");
   g.style.transform="translate("+(Math.cos(mid)*10).toFixed(1)+"px,"+(Math.sin(mid)*10).toFixed(1)+"px)";
 }
-const PIE_CX=320,PIE_CY=146,PIE_R=125;
+const PIE_W=720,PIE_H=412,PIE_CX=360,PIE_CY=198,PIE_R=183;
 function sliceIndexAt(rows,total,vx,vy){
   // Tim lat pie theo vi tri cham (toa do viewBox): tinh goc quanh tam roi
   // doi ra lat tuong ung — lat mong van bam duoc, ke ca khi bam vao nhan.
@@ -796,7 +844,7 @@ function bindChartTips(el){
     const svg=el.querySelector("svg");if(!svg)return null;
     const rct=svg.getBoundingClientRect();
     if(!rct.width||!rct.height)return null;
-    const vx=(x-rct.left)/rct.width*640,vy=(y-rct.top)/rct.height*300;
+    const vx=(x-rct.left)/rct.width*PIE_W,vy=(y-rct.top)/rct.height*PIE_H;
     return sliceIndexAt(d.rows,d.total,vx,vy);
   }
   el.addEventListener("pointerover",function(e){
@@ -843,7 +891,7 @@ function bindChartTips(el){
 /* --- Bieu do pie 3D (SVG) --- */
 let pieUid=0;
 function pieSVG(rows,p,uid){
-  const W=640,H=300,cx=PIE_CX,cy=PIE_CY,r=PIE_R,d=16;
+  const W=PIE_W,H=PIE_H,cx=PIE_CX,cy=PIE_CY,r=PIE_R,d=16;
   const tot=(rows||[]).reduce(function(s,x){return s+Number(x.total||0);},0);
   let out='<svg class="chart-svg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Biểu đồ hình tròn">';
   out+='<defs><radialGradient id="'+uid+'hi" cx="38%" cy="30%" r="75%"><stop offset="0%" stop-color="#fff" stop-opacity="0.22"/><stop offset="60%" stop-color="#fff" stop-opacity="0"/></radialGradient><filter id="'+uid+'sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#0F172A" flood-opacity="0.20"/></filter></defs>';
@@ -876,7 +924,7 @@ function pieSVG(rows,p,uid){
       inner+='<path d="M '+cx+' '+cy+' L '+f1(p0[0])+' '+f1(p0[1])+' A '+r+' '+r+' 0 '+large+' 1 '+f1(p3[0])+' '+f1(p3[1])+' Z" fill="'+col+'"/>';
     }
     out+='<g class="slice" data-mid="'+mid.toFixed(3)+'" data-tip="'+escAttr(tip)+'">'+inner+'</g>';
-    if(p>=0.999)labels.push({mid:mid,text:(x.category||"Khác")+" "+pct+"%",y:cy+Math.sin(mid)*(r+24)});
+    if(p>=0.999)labels.push({mid:mid,text:(x.category||"Khác")+" "+pct+"%",y:cy+Math.sin(mid)*(r+12)});
     a=a1;
   });
   out+='<ellipse cx="'+cx+'" cy="'+cy+'" rx="'+r+'" ry="'+r+'" fill="url(#'+uid+'hi)"/>';
@@ -897,7 +945,7 @@ function pieSVG(rows,p,uid){
   labels.forEach(function(lb){
     const cos=Math.cos(lb.mid);
     const ex=cx+cos*(r+2),ey=cy+Math.sin(lb.mid)*(r+2);
-    const lx=cx+cos*(r+24),ly=lb.y;
+    const lx=cx+cos*(r+12),ly=lb.y;
     out+='<line x1="'+ex.toFixed(1)+'" y1="'+ey.toFixed(1)+'" x2="'+lx.toFixed(1)+'" y2="'+ly.toFixed(1)+'" stroke="#94A3B8" stroke-width="1"/>';
     out+='<text class="pielbl" x="'+(lx+(cos>=0?4:-4)).toFixed(1)+'" y="'+ly.toFixed(1)+'" text-anchor="'+(cos>=0?"start":"end")+'" dominant-baseline="central">'+esc(lb.text)+'</text>';
   });
@@ -1236,7 +1284,7 @@ function statListHTML(rows,total){
   if(!rows.length)return '<p class="muted">Chưa có dữ liệu trong kỳ này.</p>';
   return rows.map(function(x){
     const p=total?Math.round(Number(x.total)/total*100):0;
-    return '<div class="catbar"><span class="nm">'+esc(x.category||"Khác")+'</span><span class="tr"><i style="width:'+p+'%;background:'+esc(x.color||"#64748B")+'"></i></span><span class="pc">'+p+'%</span><span style="width:110px;text-align:right">'+fmt(x.total)+'</span></div>';
+    return '<div class="catbar click" data-cat="'+escAttr(x.category||"")+'"><span class="nm">'+esc(x.category||"Khác")+'</span><span class="tr"><i style="width:'+p+'%;background:'+esc(x.color||"#64748B")+'"></i></span><span class="pc">'+p+'%</span><span style="width:110px;text-align:right">'+fmt(x.total)+'</span></div>';
   }).join("");
 }
 function trendLabel(l){
@@ -1299,10 +1347,12 @@ async function loadStats(){
     }
     const q=r?("?kind="+statState.kind+"&from="+encodeURIComponent(r.from)+"&to="+encodeURIComponent(r.to)):("?kind="+statState.kind);
     const d=await api("/api/stats"+q);
-    $("statPieTitle").textContent="🍰 Cơ cấu "+(statState.kind==="income"?"thu":"chi")+(r?" • "+r.label:" • toàn bộ thời gian");
     const statPieRows=assignPieColors(d.byCategory||[]);
     renderPie($("statPie"),statPieRows);
     $("statList").innerHTML=statListHTML(statPieRows,d.total||0);
+    $("statList").querySelectorAll(".catbar.click").forEach(function(el){
+      el.onclick=function(){openStatCatDetail(el.getAttribute("data-cat")||"");};
+    });
     $("statRangeLabel").textContent=(r?r.label:"Toàn bộ thời gian")+" • Tổng "+(statState.kind==="income"?"thu":"chi")+": "+fmt(d.total||0);
   }catch(e){toast(e.message);}
 }
@@ -1565,6 +1615,11 @@ function fillYearSelects(){
   });
 }
 (function init(){
+  // Chan zoom tren iPhone: Safari bo qua user-scalable=no trong viewport,
+  // phai chan truc tiep gesture pinch (2 ngon) thi moi co tac dung.
+  // Chi chan khi cham 2 ngon tro len, cuon 1 ngon van binh thuong.
+  document.addEventListener("gesturestart",function(e){e.preventDefault();});
+  document.addEventListener("touchmove",function(e){if(e.touches.length>1)e.preventDefault();},{passive:false});
   const m=monthVN();
   fillYearSelects();
   ["txMonth","budMonth"].forEach(function(id){const el=$(id);if(el)el.value=m;});
