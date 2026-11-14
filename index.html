@@ -36,6 +36,7 @@ h1{font-size:22px}h2{font-size:18px;margin:4px 0 12px}h3{font-size:16px}
 .btn.ghost{background:transparent}
 .btn.small{min-height:40px;padding:6px 12px;font-size:14px}
 .btn.block{width:100%}
+.total-chip{font-weight:700;font-size:15px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px;white-space:nowrap}
 .btn:disabled{opacity:.55;cursor:not-allowed}
 input,select,textarea{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);font-size:16px}
 textarea{min-height:80px;resize:vertical}
@@ -240,11 +241,12 @@ html{touch-action:pan-x pan-y}
     <section id="view-accounts" class="view hidden">
       <h2>Ví / Tài khoản tiền</h2>
       <div class="card"><div id="accList"></div></div>
-      <div class="card"><h3>Thêm ví mới</h3>
+      <div class="card"><h3 id="accFormTitle">Thêm ví mới</h3>
         <label>Tên ví</label><input id="accName" placeholder="VD: Vietcombank, Tiền mặt, MoMo">
         <label>Loại</label><select id="accType"><option value="cash">💵 Tiền mặt</option><option value="bank">🏦 Ngân hàng</option><option value="ewallet">📱 Ví điện tử</option><option value="card">💳 Thẻ tín dụng</option><option value="savings">💰 Tiền tiết kiệm</option></select>
-        <label>Số dư đầu kỳ (đồng)</label><input id="accOpen" inputmode="numeric" placeholder="0">
+        <label id="accOpenLabel">Số dư đầu kỳ (đồng)</label><input id="accOpen" inputmode="numeric" placeholder="0">
         <div style="margin-top:14px"><button class="btn primary block" id="btnAddAcc" type="button">Thêm ví</button></div>
+        <div style="margin-top:8px"><button class="btn block hidden" id="btnCancelAcc" type="button">Hủy sửa</button></div>
       </div>
     </section>
 
@@ -275,7 +277,7 @@ html{touch-action:pan-x pan-y}
     </section>
 
     <section id="view-recurring" class="view hidden">
-      <h2>Giao dịch định kỳ</h2>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2>Giao dịch định kỳ</h2><span id="recTotal" class="total-chip"></span></div>
       <div class="card"><div id="recList"></div></div>
       <div class="card"><h3>Thêm khoản định kỳ</h3>
         <label>Nội dung</label><input id="recNote" placeholder="VD: Internet VNPT, Học phí">
@@ -285,7 +287,7 @@ html{touch-action:pan-x pan-y}
         <label><input type="checkbox" id="recAuto" style="width:auto;min-height:0"> Tự động ghi khi đến hạn (không tick = chỉ nhắc)</label>
         <p id="recAccMsg" class="muted hidden" style="margin-top:8px">⚠️ Bạn chưa có ví nào — tạo ví ở mục Ví trước rồi mới thêm khoản định kỳ.</p>
         <div style="margin-top:14px"><button class="btn primary block" id="btnAddRec" type="button">Thêm khoản định kỳ</button></div>
-        <p class="muted" style="margin-top:8px">Worker hiện chưa có API sửa/xóa khoản định kỳ — thêm xong chỉ xem được trong danh sách.</p>
+        <div style="margin-top:8px"><button class="btn block hidden" id="btnCancelRec" type="button">Hủy sửa</button></div>
       </div>
     </section>
 
@@ -499,7 +501,7 @@ function logout(silent){
 }
 
 /* ================= State ================= */
-const state={user:null,accounts:[],categories:[],tx:[],budgets:[],recurrings:[],goals:[],view:"dashboard",txKind:"expense",editingId:null,impRows:[],impHeaders:[],dashMonth:null};
+const state={user:null,accounts:[],categories:[],tx:[],budgets:[],recurrings:[],goals:[],view:"dashboard",txKind:"expense",editingId:null,editingRecId:null,editingAccId:null,impRows:[],impHeaders:[],dashMonth:null};
 const NAV=[
   ["dashboard","🏠","Tổng quan"],["transactions","↕️","Giao dịch"],["accounts","💰","Ví"],
   ["categories","🏷️","Danh mục"],["budgets","🎯","Ngân sách"],["recurring","🔁","Định kỳ"],
@@ -1127,9 +1129,26 @@ async function loadTx(){
 async function loadAccounts(){
   try{await loadBase();
     $("accList").innerHTML=state.accounts.length?state.accounts.map(function(a){
-      return '<div class="list-item"><span class="ic">'+esc(a.icon||"💵")+'</span><div class="mid"><div class="t">'+esc(a.name)+'</div><div class="s">'+esc(a.type)+" • Số dư đầu kỳ "+fmt(a.opening_balance)+(a.is_active?"":" • Đã ẩn")+'</div></div><div class="amt">'+fmt(a.balance)+'</div><button class="btn small danger" data-id="'+a.id+'">Xóa</button></div>';}).join(""):'<p class="muted">Chưa có ví nào.</p>';
-    $("accList").querySelectorAll("button[data-id]").forEach(function(b){b.onclick=async function(){if(!confirm("Xóa ví này? Ví đã có giao dịch sẽ không xóa được."))return;try{await api("/api/accounts/"+b.dataset.id,{method:"DELETE"});toast("Đã xóa ví");loadAccounts();}catch(e){toast(e.message);}};});
+      return '<div class="list-item"><span class="ic">'+esc(a.icon||"💵")+'</span><div class="mid"><div class="t">'+esc(a.name)+'</div><div class="s">'+esc(a.type)+" • Số dư đầu kỳ "+fmt(a.opening_balance)+(a.is_active?"":" • Đã ẩn")+'</div></div><div class="amt">'+fmt(a.balance)+'</div><button class="btn small" data-acc-edit="'+a.id+'">Sửa</button><button class="btn small danger" data-id="'+a.id+'">Xóa</button></div>';}).join(""):'<p class="muted">Chưa có ví nào.</p>';
+    $("accList").querySelectorAll("button[data-acc-edit]").forEach(function(b){b.onclick=function(){startEditAcc(+b.dataset.accEdit);};});
+    $("accList").querySelectorAll("button[data-id]").forEach(function(b){b.onclick=async function(){if(!confirm("Xóa ví này? Ví đã có giao dịch sẽ không xóa được."))return;try{await api("/api/accounts/"+b.dataset.id,{method:"DELETE"});if(state.editingAccId===+b.dataset.id)cancelEditAcc();toast("Đã xóa ví");loadAccounts();}catch(e){toast(e.message);}};});
   }catch(e){toast(e.message);}
+}
+function startEditAcc(id){
+  const a=state.accounts.find(function(x){return x.id===id;});if(!a)return;
+  state.editingAccId=id;
+  $("accName").value=a.name;$("accType").value=a.type;$("accOpen").value=a.balance;
+  $("accFormTitle").textContent="Sửa ví";
+  $("accOpenLabel").textContent="Số dư hiện tại trong ví (đồng)";
+  $("btnAddAcc").textContent="Lưu thay đổi";show("btnCancelAcc",true);
+  $("btnAddAcc").scrollIntoView({behavior:"smooth",block:"center"});
+}
+function cancelEditAcc(){
+  state.editingAccId=null;
+  $("accName").value="";$("accOpen").value="";
+  $("accFormTitle").textContent="Thêm ví mới";
+  $("accOpenLabel").textContent="Số dư đầu kỳ (đồng)";
+  $("btnAddAcc").textContent="Thêm ví";show("btnCancelAcc",false);
 }
 
 /* ================= Danh mục ================= */
@@ -1168,7 +1187,7 @@ function startEditCat(c){
   show("btnAddCat",false);show("catEditBtns",true);
   $("catFormTitle").scrollIntoView({behavior:"smooth",block:"center"});
 }
-const CAT_ICONS=["🍜","☕","🛒","🏠","💡","🛵","⛽","🚌","📚","🎓","💊","🏥","💪","🛍️","👕","🎬","🎮","🎵","✈️","🏖️","🐶","👶","🎁","🧾","📱","💇","🧹","💼","📈","💰","🍕","🍔","🍟","🍩","🍰","🍎","🥛","🍺","🍷","🍗","🥗","🍝","🛏️","🚿","🛋️","🧺","🚕","🏍️","🚲","🚂","💄","👗","👞","👜","🎒","👓","⌚","💍","📷","🎧","🏦","💳","💸","🪙","🐱","🎂","🎉","🎤","🎸","🎲","🏃","⚽","🏊","🧘","👔","🖥️","📞","🎯","🎳","🎪"];
+const CAT_ICONS=["🍜","☕","🛒","🏠","💡","🛵","⛽","🚌","📚","🎓","💊","🏥","💪","🛍️","👕","🎬","🎮","🎵","✈️","🏖️","🐶","👶","🎁","🧾","📱","💇","🧹","💼","📈","💰","🍕","🍔","🍟","🍩","🍰","🍎","🥛","🍺","🍷","🍗","🥗","🍝","🛏️","🚿","🛋️","🧺","🚕","🏍️","🚲","🚂","💄","👗","👞","👜","🎒","👓","⌚","💍","📷","🎧","🏦","💳","💸","🪙","🐱","🎂","🎉","🎤","🎸","🎲","🏃","⚽","🏊","🧘","👔","🖥️","📞","🎯","🎳","🎪","🛡️","💅","🔌","🏸","🏋️","🍻","💌","🧴","💆","🎾"];
 const CAT_COLOR_POOL=PIE_COLORS.concat(["#F59E0B","#059669","#9333EA","#0284C7","#E11D48","#A16207","#0F766E","#B91C1C","#6D28D9","#0369A1","#BE123C","#15803D"]);
 function buildIconGrid(){
   const g=$("catIconGrid");if(!g)return;
@@ -1230,9 +1249,30 @@ async function loadRecurring(){
     show("recAccMsg",noAcc);
     $("btnAddRec").disabled=noAcc;
     const d=await api("/api/recurrings");state.recurrings=d.recurrings||[];
+    // Tong tien dinh ky hang thang (goc phai tieu de)
+    let totInc=0,totExp=0;state.recurrings.forEach(function(r){if(r.kind==="income")totInc+=r.amount;else totExp+=r.amount;});
+    const parts=[];
+    if(totInc)parts.push("Tổng thu "+fmt(totInc));
+    if(totExp)parts.push("Tổng chi "+fmt(totExp));
+    $("recTotal").textContent=parts.length?parts.join(" • ")+"/tháng":"Chưa có khoản nào";
+    const ym=new Date().getFullYear()+"-"+String(new Date().getMonth()+1).padStart(2,"0");
     $("recList").innerHTML=state.recurrings.length?state.recurrings.map(function(r){
-      return '<div class="list-item"><span class="ic">🔁</span><div class="mid"><div class="t">'+esc(r.note||catName(r.category_id))+'</div><div class="s">Ngày '+r.day_of_month+' hàng tháng • '+esc(accName(r.account_id))+" • "+(r.auto_create?"Tự động ghi":"Nhắc xác nhận")+'</div></div><div class="amt '+(r.kind==="income"?"inc":"exp")+'">'+(r.kind==="income"?"+":"−")+" "+fmt(r.amount)+'</div></div>';}).join(""):'<p class="muted">Chưa có khoản định kỳ nào.</p>';
+      const done=r.auto_create&&r.last_run_month===ym?" • Đã ghi tháng này":"";
+      return '<div class="list-item"><span class="ic">🔁</span><div class="mid"><div class="t">'+esc(r.note||catName(r.category_id))+'</div><div class="s">Ngày '+r.day_of_month+' hàng tháng • '+esc(accName(r.account_id))+" • "+(r.auto_create?"Tự động ghi":"Nhắc xác nhận")+done+'</div></div><div class="amt '+(r.kind==="income"?"inc":"exp")+'">'+(r.kind==="income"?"+":"−")+" "+fmt(r.amount)+'</div><button class="btn small" data-rec-edit="'+r.id+'">Sửa</button><button class="btn small danger" data-rec-del="'+r.id+'">Xóa</button></div>';}).join(""):'<p class="muted">Chưa có khoản định kỳ nào.</p>';
+    $("recList").querySelectorAll("button[data-rec-edit]").forEach(function(b){b.onclick=function(){startEditRec(+b.dataset.recEdit);};});
+    $("recList").querySelectorAll("button[data-rec-del]").forEach(function(b){b.onclick=async function(){if(!confirm("Xóa khoản định kỳ này?"))return;try{await api("/api/recurrings/"+b.dataset.recDel,{method:"DELETE"});if(state.editingRecId===+b.dataset.recDel)cancelEditRec();toast("Đã xóa khoản định kỳ");loadRecurring();}catch(e){toast(e.message);}};});
   }catch(e){toast(e.message);}
+}
+function startEditRec(id){
+  const r=state.recurrings.find(function(x){return x.id===id;});if(!r)return;
+  state.editingRecId=id;
+  $("recNote").value=r.note||"";$("recKind").value=r.kind;$("recAmount").value=r.amount;$("recDay").value=r.day_of_month;$("recAccount").value=r.account_id;$("recCat").value=r.category_id||"";$("recAuto").checked=!!r.auto_create;
+  $("btnAddRec").textContent="Lưu thay đổi";show("btnCancelRec",true);
+  $("btnAddRec").scrollIntoView({behavior:"smooth",block:"center"});
+}
+function cancelEditRec(){
+  state.editingRecId=null;
+  $("btnAddRec").textContent="Thêm khoản định kỳ";show("btnCancelRec",false);
 }
 
 /* ================= Mục tiêu ================= */
@@ -1559,10 +1599,19 @@ function bindForms(){
   $("dashPrev").onclick=function(){shiftDashMonth(-1);};
   $("dashNext").onclick=function(){shiftDashMonth(1);};
   $("btnAddAcc").onclick=async function(){
+    if(!$("accName").value.trim())return toast("Nhập tên ví");
     const open=parseAmount($("accOpen").value||"0");
-    try{await api("/api/accounts",{method:"POST",body:{name:$("accName").value.trim(),type:$("accType").value,opening_balance:isNaN(open)?0:open,currency:"VND",color:"#2563EB",icon:$("accType").selectedOptions[0].textContent.trim().split(" ")[0]}});$("accName").value="";$("accOpen").value="";toast("Đã thêm ví");loadAccounts();}
-    catch(e){toast(e.message);}
+    const icon=$("accType").selectedOptions[0].textContent.trim().split(" ")[0];
+    try{
+      if(state.editingAccId){
+        await api("/api/accounts/"+state.editingAccId,{method:"PUT",body:{name:$("accName").value.trim(),type:$("accType").value,balance:isNaN(open)?0:open,icon:icon}});
+        cancelEditAcc();toast("Đã lưu thay đổi");loadAccounts();
+      }else{
+        await api("/api/accounts",{method:"POST",body:{name:$("accName").value.trim(),type:$("accType").value,opening_balance:isNaN(open)?0:open,currency:"VND",color:"#2563EB",icon:icon}});$("accName").value="";$("accOpen").value="";toast("Đã thêm ví");loadAccounts();
+      }
+    }catch(e){toast(e.message);}
   };
+  $("btnCancelAcc").onclick=function(){cancelEditAcc();};
   $("btnAddCat").onclick=async function(){
     try{await api("/api/categories",{method:"POST",body:{name:$("newCatName").value.trim(),kind:$("newCatKind").value,parent_id:$("newCatParent").value?+$("newCatParent").value:null,color:pickRandomCatColor(),icon:$("newCatIcon").value.trim()||"🏷️"}});$("newCatName").value="";setCatIcon("🏷️");toast("Đã thêm danh mục");loadCategories();}
     catch(e){toast(e.message);}
@@ -1584,9 +1633,14 @@ function bindForms(){
     const amt=parseAmount($("recAmount").value);if(!amt||amt<=0)return toast("Nhập số tiền hợp lệ");
     if(!state.accounts.length){try{await loadBase();}catch(e){}}
     if(!state.accounts.length)return toast("Bạn chưa có ví nào — hãy tạo ví ở mục Ví trước rồi mới thêm khoản định kỳ.");
-    try{await api("/api/recurrings",{method:"POST",body:{account_id:+$("recAccount").value,category_id:$("recCat").value?+$("recCat").value:null,kind:$("recKind").value,amount:amt,day_of_month:+$("recDay").value||1,note:$("recNote").value.trim(),auto_create:$("recAuto").checked}});toast("Đã thêm khoản định kỳ");loadRecurring();}
-    catch(e){toast(e.message);}
+    const body={account_id:+$("recAccount").value,category_id:$("recCat").value?+$("recCat").value:null,kind:$("recKind").value,amount:amt,day_of_month:+$("recDay").value||1,note:$("recNote").value.trim(),auto_create:$("recAuto").checked};
+    try{
+      if(state.editingRecId){await api("/api/recurrings/"+state.editingRecId,{method:"PUT",body:body});cancelEditRec();toast("Đã lưu thay đổi");}
+      else{await api("/api/recurrings",{method:"POST",body:body});toast("Đã thêm khoản định kỳ");}
+      loadRecurring();
+    }catch(e){toast(e.message);}
   };
+  $("btnCancelRec").onclick=function(){cancelEditRec();};
   $("btnAddGoal").onclick=async function(){
     const tgt=parseAmount($("goalTarget").value);if(!$("goalName").value.trim()||!tgt||tgt<=0)return toast("Nhập tên và số tiền mục tiêu hợp lệ");
     try{await api("/api/goals",{method:"POST",body:{name:$("goalName").value.trim(),target_amount:tgt,deadline:$("goalDeadline").value||null}});$("goalName").value="";$("goalTarget").value="";toast("Đã thêm mục tiêu");loadGoals();}
