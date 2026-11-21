@@ -37,9 +37,12 @@ h1{font-size:22px}h2{font-size:18px;margin:4px 0 12px}h3{font-size:16px}
 .btn.small{min-height:40px;padding:6px 12px;font-size:14px}
 .btn.block{width:100%}
 .total-chip{font-weight:700;font-size:15px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px;white-space:nowrap}
-.calc-row{display:flex;gap:8px;margin-top:8px}
-.calc-row button{flex:1;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:19px;font-weight:700}
-.calc-row button.eq{background:var(--primary);border-color:var(--primary);color:#fff}
+#calcPad{position:fixed;left:0;right:0;bottom:0;z-index:70;background:var(--card);border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(0,0,0,.18);padding:10px 10px calc(10px + env(safe-area-inset-bottom))}
+.calc-pad-grid{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.calc-pad-grid button{min-height:56px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:21px;font-weight:600;padding:0}
+.calc-pad-grid button.op{background:var(--soft);color:var(--primary);font-weight:700}
+.calc-pad-grid button.eq{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:700}
+.calc-pad-grid button.fn{color:var(--muted)}
 .cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-height:228px;overflow-y:auto;padding:2px}
 .cat-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:10px 4px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);font-size:12px;text-align:center;cursor:pointer;min-height:64px}
 .cat-cell .ci{font-size:22px;line-height:1.2}
@@ -412,7 +415,6 @@ html{touch-action:pan-x pan-y}
       <button type="button" data-kind="transfer" id="kChuyen">Chuyển tiền</button>
     </div>
     <label>Số tiền (đồng)</label><input id="fAmount" inputmode="numeric" placeholder="VD: 1.000.000+100.000">
-    <div id="calcRow" class="calc-row hidden"><button type="button" data-op="+">+</button><button type="button" data-op="−">−</button><button type="button" data-op="×">×</button><button type="button" data-op="÷">÷</button><button type="button" data-op="=" class="eq">=</button></div>
     <label>Ngày</label><input id="fDate" type="date">
     <label id="fAccLabel">Ví</label><select id="fAccount"></select>
     <div id="fToWrap" class="hidden"><label>Ví đích</label><select id="fToAccount"></select></div>
@@ -569,9 +571,60 @@ function moneyValue(el){
   if(/[+\-*/×÷xX]/.test(body))return Math.round(evalMoneyExpr(v));
   return parseAmount(v);
 }
+// ---- Ban phim may tinh (chi tren thiet bi cam ung) ----
+// Dien thoai/may tinh bang: ban phim he thong khong co dau + - * / nen app
+// hien ban phim may tinh cua rieng minh (so ben trai, phep tinh cot phai)
+// thay cho ban phim he thong. May tinh de ban giu nguyen go phim vat ly.
+const IS_TOUCH=window.matchMedia("(pointer:coarse)").matches;
+let calcPadTarget=null;
+function showCalcPad(el){
+  if(!IS_TOUCH)return;
+  calcPadTarget=el;
+  show("calcPad",true);
+  try{el.scrollIntoView({block:"center",behavior:"smooth"});}catch(e){}
+}
+function hideCalcPad(){
+  calcPadTarget=null;
+  show("calcPad",false);
+}
+// calcPadApply: xu ly 1 phim bam (tach rieng de test duoc).
+function calcPadApply(el,key){
+  if(!el)return;
+  if(key==="C"){el.value="";}
+  else if(key==="⌫"){el.value=el.value.slice(0,-1);formatMoneyField(el);}
+  else if(key==="="){
+    const v=el.value;
+    if(v&&/[+\-*/×÷]/.test(v.replace(/^-/,""))){
+      const r=evalMoneyExpr(v);
+      if(!isNaN(r))el.value=fmtNum(Math.round(r));
+    }
+  }
+  else if(key==="+"||key==="−"||key==="×"||key==="÷"){
+    const mop=key==="−"?"-":(key==="×"?"*":(key==="÷"?"/":key));
+    let v=el.value;
+    if(!v)return;
+    if(/[+\-*/×÷]$/.test(v))v=v.slice(0,-1)+mop;
+    else v+=mop;
+    el.value=v;formatMoneyField(el);
+  }
+  else{ // chu so, 00, 000
+    let v=el.value;
+    if(v==="0")v=""; // so 0 dung dau: bam so moi thay luon (nhu may tinh)
+    if(!v&&(key==="00"||key==="000"))key="0";
+    el.value=v+key;formatMoneyField(el);
+  }
+  try{const L=el.value.length;el.setSelectionRange(L,L);}catch(e){}
+}
 function attachMoneyInput(el){
   if(!el||el.dataset.money)return;
   el.dataset.money="1";
+  if(IS_TOUCH){
+    // readonly de ban phim he thong khong hien (van focus + nhan gia tri
+    // qua ban phim may tinh cua app duoc).
+    el.readOnly=true;
+    el.addEventListener("focus",function(){showCalcPad(el);});
+    el.addEventListener("blur",function(){hideCalcPad();});
+  }
   el.addEventListener("input",function(){formatMoneyField(el);});
   el.addEventListener("keydown",function(e){
     if(e.key==="="||e.key==="Enter"){
@@ -1176,8 +1229,6 @@ async function openTxModal(kind,tx){
   // Nap dung danh muc cua giao dich khi sua (truoc day form sua de danh muc
   // mac dinh o muc dau tien, luu lai la doi nham danh muc).
   if(tx&&tx.category_id)setFCat(tx.category_id);
-  // Nut may tinh an san, chi hien khi nguoi dung cham vao o so tien.
-  show("calcRow",false);
   // Chua co vi thi bao ngay + khoa nut Luu (gui account_id=0 se bi loi khoa ngoai).
   const noAcc=!state.accounts.length;
   $("btnSaveTx").disabled=noAcc;
@@ -1742,33 +1793,17 @@ function bindForms(){
   bindSuggest("fTags","fTagsSug","tags");
   // May tinh + phan cach nghin cho cac o nhap tien
   ["fAmount","recAmount","accOpen","budLimit","goalTarget"].forEach(function(id){attachMoneyInput($(id));});
-  // Hang nut may tinh duoi o so tien (ban phim so tren dien thoai khong co dau + - * / =)
-  $("calcRow").addEventListener("click",function(e){
-    const b=e.target.closest("button[data-op]");if(!b)return;
-    const el=$("fAmount");const op=b.dataset.op;
-    if(op==="="){
-      const v=el.value;
-      if(v&&/[+\-*/×÷]/.test(v.replace(/^-/,""))){
-        const r=evalMoneyExpr(v);
-        if(!isNaN(r))el.value=fmtNum(Math.round(r));
-      }
-    }else{
-      const mop=op==="−"?"-":(op==="×"?"*":(op==="÷"?"/":op));
-      let v=el.value;
-      if(!v)return;
-      if(/[+\-*/×÷]$/.test(v))v=v.slice(0,-1)+mop;
-      else v+=mop;
-      el.value=v;formatMoneyField(el);
-    }
+  // Ban phim may tinh: pointerdown + preventDefault de o nhap khong bi
+  // mat focus khi bam phim (neu dung click thi blur se chay truoc).
+  $("calcPad").addEventListener("pointerdown",function(e){
+    const b=e.target.closest("button[data-key]");if(!b)return;
+    e.preventDefault();
+    const el=calcPadTarget;if(!el)return;
+    const key=b.dataset.key;
+    if(key==="✓"){hideCalcPad();el.blur();return;} // blur se tu tinh bieu thuc con do
+    calcPadApply(el,key);
     el.focus();
-    try{const L=el.value.length;el.setSelectionRange(L,L);}catch(err){}
   });
-  // Nut may tinh chi hien khi dang nhap so. An sau blur co tre 250ms de
-  // cai cham vao nut van kip nhan (blur chay truoc click tren dien thoai);
-  // neu o nhap da focus lai thi khong an.
-  let calcHideT=null;
-  $("fAmount").addEventListener("focus",function(){clearTimeout(calcHideT);show("calcRow",true);});
-  $("fAmount").addEventListener("blur",function(){clearTimeout(calcHideT);calcHideT=setTimeout(function(){if(document.activeElement!==$("fAmount"))show("calcRow",false);},250);});
   // Sua/Xoa nhanh danh muc dang chon trong form giao dich
   $("btnDelFCat").onclick=async function(){
     const id=$("fCategory").value;if(!id)return;
@@ -1933,5 +1968,14 @@ function fillYearSelects(){
   }else{showApp(false);}
 })();
 </script>
+<div id="calcPad" class="hidden">
+  <div class="calc-pad-grid">
+    <button type="button" data-key="7">7</button><button type="button" data-key="8">8</button><button type="button" data-key="9">9</button><button type="button" data-key="÷" class="op">÷</button>
+    <button type="button" data-key="4">4</button><button type="button" data-key="5">5</button><button type="button" data-key="6">6</button><button type="button" data-key="×" class="op">×</button>
+    <button type="button" data-key="1">1</button><button type="button" data-key="2">2</button><button type="button" data-key="3">3</button><button type="button" data-key="−" class="op">−</button>
+    <button type="button" data-key="0">0</button><button type="button" data-key="00">00</button><button type="button" data-key="000">000</button><button type="button" data-key="+" class="op">+</button>
+    <button type="button" data-key="C" class="fn">C</button><button type="button" data-key="⌫" class="fn">⌫</button><button type="button" data-key="✓" class="op">✓</button><button type="button" data-key="=" class="eq">=</button>
+  </div>
+</div>
 </body>
 </html>
