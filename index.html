@@ -454,6 +454,15 @@ html{touch-action:pan-x pan-y}
 
 <div id="toast" class="hidden"></div>
 <div id="chartTip" class="hidden"></div>
+<div id="calcPad" class="hidden">
+  <div class="calc-pad-grid">
+    <button type="button" data-key="7">7</button><button type="button" data-key="8">8</button><button type="button" data-key="9">9</button><button type="button" data-key="÷" class="op">÷</button>
+    <button type="button" data-key="4">4</button><button type="button" data-key="5">5</button><button type="button" data-key="6">6</button><button type="button" data-key="×" class="op">×</button>
+    <button type="button" data-key="1">1</button><button type="button" data-key="2">2</button><button type="button" data-key="3">3</button><button type="button" data-key="−" class="op">−</button>
+    <button type="button" data-key="0">0</button><button type="button" data-key="00">00</button><button type="button" data-key="000">000</button><button type="button" data-key="+" class="op">+</button>
+    <button type="button" data-key="C" class="fn">C</button><button type="button" data-key="⌫" class="fn">⌫</button><button type="button" data-key="✓" class="op">✓</button><button type="button" data-key="=" class="eq">=</button>
+  </div>
+</div>
 <script>
 "use strict";
 /* ================= Cấu hình & tiện ích ================= */
@@ -1795,7 +1804,8 @@ function bindForms(){
   ["fAmount","recAmount","accOpen","budLimit","goalTarget"].forEach(function(id){attachMoneyInput($(id));});
   // Ban phim may tinh: pointerdown + preventDefault de o nhap khong bi
   // mat focus khi bam phim (neu dung click thi blur se chay truoc).
-  $("calcPad").addEventListener("pointerdown",function(e){
+  const calcPadEl=$("calcPad");
+  if(calcPadEl)calcPadEl.addEventListener("pointerdown",function(e){
     const b=e.target.closest("button[data-key]");if(!b)return;
     e.preventDefault();
     const el=calcPadTarget;if(!el)return;
@@ -1968,14 +1978,5 @@ function fillYearSelects(){
   }else{showApp(false);}
 })();
 </script>
-<div id="calcPad" class="hidden">
-  <div class="calc-pad-grid">
-    <button type="button" data-key="7">7</button><button type="button" data-key="8">8</button><button type="button" data-key="9">9</button><button type="button" data-key="÷" class="op">÷</button>
-    <button type="button" data-key="4">4</button><button type="button" data-key="5">5</button><button type="button" data-key="6">6</button><button type="button" data-key="×" class="op">×</button>
-    <button type="button" data-key="1">1</button><button type="button" data-key="2">2</button><button type="button" data-key="3">3</button><button type="button" data-key="−" class="op">−</button>
-    <button type="button" data-key="0">0</button><button type="button" data-key="00">00</button><button type="button" data-key="000">000</button><button type="button" data-key="+" class="op">+</button>
-    <button type="button" data-key="C" class="fn">C</button><button type="button" data-key="⌫" class="fn">⌫</button><button type="button" data-key="✓" class="op">✓</button><button type="button" data-key="=" class="eq">=</button>
-  </div>
-</div>
 </body>
 </html>
