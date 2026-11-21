@@ -37,6 +37,9 @@ h1{font-size:22px}h2{font-size:18px;margin:4px 0 12px}h3{font-size:16px}
 .btn.small{min-height:40px;padding:6px 12px;font-size:14px}
 .btn.block{width:100%}
 .total-chip{font-weight:700;font-size:15px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px;white-space:nowrap}
+.calc-row{display:flex;gap:8px;margin-top:8px}
+.calc-row button{flex:1;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:19px;font-weight:700}
+.calc-row button.eq{background:var(--primary);border-color:var(--primary);color:#fff}
 .btn:disabled{opacity:.55;cursor:not-allowed}
 input,select,textarea{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);font-size:16px}
 textarea{min-height:80px;resize:vertical}
@@ -403,7 +406,8 @@ html{touch-action:pan-x pan-y}
       <button type="button" data-kind="income" id="kThu">Thu</button>
       <button type="button" data-kind="transfer" id="kChuyen">Chuyển tiền</button>
     </div>
-    <label>Số tiền (đồng)</label><input id="fAmount" inputmode="numeric" placeholder="VD: 350000">
+    <label>Số tiền (đồng)</label><input id="fAmount" inputmode="numeric" placeholder="VD: 1.000.000+100.000">
+    <div id="calcRow" class="calc-row"><button type="button" data-op="+">+</button><button type="button" data-op="−">−</button><button type="button" data-op="×">×</button><button type="button" data-op="÷">÷</button><button type="button" data-op="=" class="eq">=</button></div>
     <label>Ngày</label><input id="fDate" type="date">
     <label id="fAccLabel">Ví</label><select id="fAccount"></select>
     <div id="fToWrap" class="hidden"><label>Ví đích</label><select id="fToAccount"></select></div>
@@ -475,6 +479,109 @@ function parseAmount(v){ // chỉ chuẩn hoá chuỗi; số đã gõ dạng 350
   else if(lastCom>-1&&/,\d{1,2}$/.test(s)){s=s.replace(/\./g,"").replace(",",".");return Math.round(parseFloat(s));}
   else{s=s.replace(/[.,]/g,"");}
   const n=parseInt(s,10);return isNaN(n)?NaN:n;
+}
+// ---- May tinh + phan cach nghin cho cac o nhap tien ----
+// parseMoneyToken: 1 so hang — dau cham la phan cach nghin (bo), dau phay
+// la thap phan (doi thanh .), co the am.
+function parseMoneyToken(tok){
+  let t=String(tok==null?"":tok).trim();
+  if(!t)return NaN;
+  let neg=false;
+  if(t.charAt(0)==="-"){neg=true;t=t.slice(1);}
+  t=t.replace(/\./g,"").replace(/,/g,".");
+  const n=parseFloat(t);
+  return isNaN(n)?NaN:(neg?-n:n);
+}
+// evalMoneyExpr: tinh bieu thuc + - * / (nhan chia truoc, cong tru sau).
+// Chap nhan ca x/X/× lam nhan, ÷ lam chia. Tra NaN neu bieu thuc sai.
+function evalMoneyExpr(s){
+  s=String(s||"").replace(/[×xX]/g,"*").replace(/÷/g,"/").replace(/[\s_đ₫]/g,"");
+  if(!s||!/^[0-9+\-*/.,]+$/.test(s))return NaN;
+  const toks=s.match(/\d[\d.,]*|[+\-*/]/g);
+  if(!toks)return NaN;
+  const nums=[],ops=[];
+  for(let i=0;i<toks.length;i++){
+    const t=toks[i];
+    if(t==="+"||t==="*"||t==="/")ops.push(t);
+    else if(t==="-"){
+      if(i===0||toks[i-1]==="+"||toks[i-1]==="-"||toks[i-1]==="*"||toks[i-1]==="/"){
+        const nx=toks[i+1];
+        if(nx===undefined||/^[+\-*/]$/.test(nx))return NaN;
+        nums.push(-parseMoneyToken(nx));i++;
+      }else ops.push(t);
+    }else nums.push(parseMoneyToken(t));
+  }
+  if(!nums.length||nums.some(isNaN))return NaN;
+  if(ops.length!==nums.length-1)return NaN;
+  const n2=[nums[0]],o2=[];
+  for(let i=0;i<ops.length;i++){
+    if(ops[i]==="*"||ops[i]==="/"){
+      const a=n2.pop(),b=nums[i+1];
+      if(ops[i]==="/"&&b===0)return NaN;
+      n2.push(ops[i]==="*" ? a*b : a/b);
+    }else{o2.push(ops[i]);n2.push(nums[i+1]);}
+  }
+  let r=n2[0];
+  for(let i=0;i<o2.length;i++)r=o2[i]==="+"?r+n2[i+1]:r-n2[i+1];
+  return r;
+}
+// formatMoneyField: dinh dang lai tung so hang trong o nhap bang dau cham
+// phan cach nghin (chuan VN), giu vi tri con tro theo so chu so da go.
+function formatMoneyField(el){
+  const raw=el.value;
+  if(!raw)return;
+  const caret=(el.selectionStart==null)?raw.length:el.selectionStart;
+  // Dem ky tu khong phai dau cham truoc con tro (dau cham la ky tu duy nhat
+  // bi them/bot khi dinh dang, nen dem theo no thi con tro dung yen cho).
+  let keepBefore=0;
+  for(let i=0;i<caret&&i<raw.length;i++)if(raw[i]!==".")keepBefore++;
+  const out=raw.split(/([+\-*/×÷xX])/).map(function(seg){
+    if(!seg||/^[+\-*/×÷xX]$/.test(seg))return seg;
+    let neg=false;let t=seg;
+    if(t.charAt(0)==="-"){neg=true;t=t.slice(1);}
+    const cm=t.lastIndexOf(",");
+    const intPart=(cm>=0?t.slice(0,cm):t).replace(/\./g,"");
+    const decPart=cm>=0?t.slice(cm):"";
+    if(!/^\d*$/.test(intPart))return seg;
+    return (neg?"-":"")+intPart.replace(/\B(?=(\d{3})+(?!\d))/g,".")+decPart;
+  }).join("");
+  if(out!==raw){
+    el.value=out;
+    let pos=0,seen=0;
+    while(pos<out.length&&seen<keepBefore){if(out[pos]!==".")seen++;pos++;}
+    try{el.setSelectionRange(pos,pos);}catch(e){}
+  }
+}
+// moneyValue: doc gia tri o nhap tien — co toan tu thi tinh bieu thuc,
+// khong thi dung parseAmount nhu cu.
+function moneyValue(el){
+  const v=String(el.value||"").trim();
+  if(!v)return NaN;
+  const body=v.charAt(0)==="-"?v.slice(1):v;
+  if(/[+\-*/×÷xX]/.test(body))return Math.round(evalMoneyExpr(v));
+  return parseAmount(v);
+}
+function attachMoneyInput(el){
+  if(!el||el.dataset.money)return;
+  el.dataset.money="1";
+  el.addEventListener("input",function(){formatMoneyField(el);});
+  el.addEventListener("keydown",function(e){
+    if(e.key==="="||e.key==="Enter"){
+      const v=el.value;
+      if(v&&/[+\-*/×÷]/.test(v.replace(/^-/,""))){
+        const r=evalMoneyExpr(v);
+        if(!isNaN(r))el.value=fmtNum(Math.round(r));
+        e.preventDefault();
+      }
+    }
+  });
+  el.addEventListener("blur",function(){
+    const v=el.value;
+    if(v&&/[+\-*/×÷]/.test(v.replace(/^-/,""))){
+      const r=evalMoneyExpr(v);
+      if(!isNaN(r))el.value=fmtNum(Math.round(r));
+    }
+  });
 }
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
 function toast(msg,ms){const t=document.getElementById("toast");t.textContent=msg;t.classList.remove("hidden");clearTimeout(t._h);t._h=setTimeout(function(){t.classList.add("hidden");},ms||3200);}
@@ -1015,7 +1122,7 @@ async function openTxModal(kind,tx){
   if(!state.accounts.length){try{await loadBase();}catch(e){}}
   fillAccountSelects();
   setKindUI(state.txKind);
-  $("fAmount").value=tx?tx.amount:"";
+  $("fAmount").value=tx?tx.amount:"";formatMoneyField($("fAmount"));
   $("fDate").value=tx?tx.transaction_date:todayVN();
   $("fAccount").value=tx?tx.account_id:(state.accounts[0]?state.accounts[0].id:"");
   $("fToAccount").value=tx?(tx.transfer_to_account_id||""):(state.accounts[1]?state.accounts[1].id:"");
@@ -1119,7 +1226,7 @@ async function loadTx(){
         const t=state.tx.find(function(x){return String(x.id)===b.dataset.id;});if(!t)return;
         if(b.dataset.act==="del"){if(!confirm("Xóa giao dịch này?"))return;try{await api("/api/transactions/"+t.id,{method:"DELETE"});toast("Đã xóa");loadTx();}catch(e){toast(e.message);}}
         if(b.dataset.act==="edit"){openTxModal(t.kind,t);}
-        if(b.dataset.act==="copy"){openTxModal(t.kind);$("fAmount").value=t.amount;$("fDate").value=t.transaction_date;$("fNote").value=t.note||"";$("fTags").value=t.tags||"";$("fAccount").value=t.account_id;if(t.category_id)$("fCategory").value=t.category_id;}
+        if(b.dataset.act==="copy"){openTxModal(t.kind);$("fAmount").value=t.amount;formatMoneyField($("fAmount"));$("fDate").value=t.transaction_date;$("fNote").value=t.note||"";$("fTags").value=t.tags||"";$("fAccount").value=t.account_id;if(t.category_id)$("fCategory").value=t.category_id;}
       };
     });
   }catch(e){toast(e.message);}
@@ -1137,7 +1244,7 @@ async function loadAccounts(){
 function startEditAcc(id){
   const a=state.accounts.find(function(x){return x.id===id;});if(!a)return;
   state.editingAccId=id;
-  $("accName").value=a.name;$("accType").value=a.type;$("accOpen").value=a.balance;
+  $("accName").value=a.name;$("accType").value=a.type;$("accOpen").value=a.balance;formatMoneyField($("accOpen"));
   $("accFormTitle").textContent="Sửa ví";
   $("accOpenLabel").textContent="Số dư hiện tại trong ví (đồng)";
   $("btnAddAcc").textContent="Lưu thay đổi";show("btnCancelAcc",true);
@@ -1266,7 +1373,7 @@ async function loadRecurring(){
 function startEditRec(id){
   const r=state.recurrings.find(function(x){return x.id===id;});if(!r)return;
   state.editingRecId=id;
-  $("recNote").value=r.note||"";$("recKind").value=r.kind;$("recAmount").value=r.amount;$("recDay").value=r.day_of_month;$("recAccount").value=r.account_id;$("recCat").value=r.category_id||"";$("recAuto").checked=!!r.auto_create;
+  $("recNote").value=r.note||"";$("recKind").value=r.kind;$("recAmount").value=r.amount;formatMoneyField($("recAmount"));$("recDay").value=r.day_of_month;$("recAccount").value=r.account_id;$("recCat").value=r.category_id||"";$("recAuto").checked=!!r.auto_create;
   $("btnAddRec").textContent="Lưu thay đổi";show("btnCancelRec",true);
   $("btnAddRec").scrollIntoView({behavior:"smooth",block:"center"});
 }
@@ -1281,8 +1388,9 @@ async function loadGoals(){
     $("goalList").innerHTML=state.goals.length?state.goals.map(function(g){
       const p=g.target_amount?Math.round(g.saved_amount/g.target_amount*100):0;
       return '<div class="card" style="margin-bottom:10px"><div class="row"><b style="flex:1">'+esc(g.name)+'</b><span>'+fmt(g.saved_amount)+' / '+fmt(g.target_amount)+' ('+p+'%)</span></div><div class="bar"><i style="width:'+Math.min(p,100)+'%"></i></div><div class="muted" style="margin-top:6px">'+(g.deadline?'Hạn: '+esc(g.deadline):'Không đặt hạn')+'</div><div class="row" style="margin-top:10px"><input id="goalAmt-'+g.id+'" inputmode="numeric" placeholder="Số tiền (đồng)"><button class="btn small primary" data-add="'+g.id+'">Nạp</button><button class="btn small" data-wd="'+g.id+'">Rút</button></div></div>';}).join(""):'<p class="muted">Chưa có mục tiêu nào.</p>';
-    $("goalList").querySelectorAll("button[data-add]").forEach(function(b){b.onclick=async function(){const amt=parseAmount($("goalAmt-"+b.dataset.add).value);if(!amt||amt<=0)return toast("Nhập số tiền hợp lệ");try{await api("/api/goals/"+b.dataset.add+"/add",{method:"POST",body:{amount:amt}});toast("Đã nạp");loadGoals();}catch(e){toast(e.message);}};});
-    $("goalList").querySelectorAll("button[data-wd]").forEach(function(b){b.onclick=async function(){const amt=parseAmount($("goalAmt-"+b.dataset.wd).value);if(!amt||amt<=0)return toast("Nhập số tiền hợp lệ");try{await api("/api/goals/"+b.dataset.wd+"/withdraw",{method:"POST",body:{amount:amt}});toast("Đã rút");loadGoals();}catch(e){toast(e.message);}};});
+    $("goalList").querySelectorAll("button[data-add]").forEach(function(b){b.onclick=async function(){const amt=moneyValue($("goalAmt-"+b.dataset.add));if(!amt||amt<=0)return toast("Nhập số tiền hợp lệ");try{await api("/api/goals/"+b.dataset.add+"/add",{method:"POST",body:{amount:amt}});toast("Đã nạp");loadGoals();}catch(e){toast(e.message);}};});
+    $("goalList").querySelectorAll("button[data-wd]").forEach(function(b){b.onclick=async function(){const amt=moneyValue($("goalAmt-"+b.dataset.wd));if(!amt||amt<=0)return toast("Nhập số tiền hợp lệ");try{await api("/api/goals/"+b.dataset.wd+"/withdraw",{method:"POST",body:{amount:amt}});toast("Đã rút");loadGoals();}catch(e){toast(e.message);}};});
+    $("goalList").querySelectorAll("input[id^=\"goalAmt-\"]").forEach(function(inp){attachMoneyInput(inp);});
   }catch(e){toast(e.message);}
 }
 
@@ -1576,9 +1684,32 @@ function bindForms(){
   $("catDetailModal").addEventListener("click",function(e){if(e.target===$("catDetailModal"))show("catDetailModal",false);});
   bindSuggest("fNote","fNoteSug","notes");
   bindSuggest("fTags","fTagsSug","tags");
+  // May tinh + phan cach nghin cho cac o nhap tien
+  ["fAmount","recAmount","accOpen","budLimit","goalTarget"].forEach(function(id){attachMoneyInput($(id));});
+  // Hang nut may tinh duoi o so tien (ban phim so tren dien thoai khong co dau + - * / =)
+  $("calcRow").addEventListener("click",function(e){
+    const b=e.target.closest("button[data-op]");if(!b)return;
+    const el=$("fAmount");const op=b.dataset.op;
+    if(op==="="){
+      const v=el.value;
+      if(v&&/[+\-*/×÷]/.test(v.replace(/^-/,""))){
+        const r=evalMoneyExpr(v);
+        if(!isNaN(r))el.value=fmtNum(Math.round(r));
+      }
+    }else{
+      const mop=op==="−"?"-":(op==="×"?"*":(op==="÷"?"/":op));
+      let v=el.value;
+      if(!v)return;
+      if(/[+\-*/×÷]$/.test(v))v=v.slice(0,-1)+mop;
+      else v+=mop;
+      el.value=v;formatMoneyField(el);
+    }
+    el.focus();
+    try{const L=el.value.length;el.setSelectionRange(L,L);}catch(err){}
+  });
   $("btnSaveTx").onclick=async function(){
     if(!state.accounts.length){$("txFormMsg").textContent="Bạn chưa có ví nào — hãy tạo ví ở mục Ví trước, rồi quay lại thêm giao dịch.";return;}
-    const amt=parseAmount($("fAmount").value);
+    const amt=moneyValue($("fAmount"));
     if(!amt||amt<=0){$("txFormMsg").textContent="Nhập số tiền hợp lệ (số nguyên đồng, > 0).";return;}
     const date=$("fDate").value;if(!date){$("txFormMsg").textContent="Chọn ngày giao dịch.";return;}
     try{
@@ -1600,7 +1731,7 @@ function bindForms(){
   $("dashNext").onclick=function(){shiftDashMonth(1);};
   $("btnAddAcc").onclick=async function(){
     if(!$("accName").value.trim())return toast("Nhập tên ví");
-    const open=parseAmount($("accOpen").value||"0");
+    const open=moneyValue($("accOpen"));
     const icon=$("accType").selectedOptions[0].textContent.trim().split(" ")[0];
     try{
       if(state.editingAccId){
@@ -1623,14 +1754,14 @@ function bindForms(){
   };
   $("btnCancelCat").onclick=function(){resetCatForm();};
   $("btnSaveBudget").onclick=async function(){
-    const lim=parseAmount($("budLimit").value);
-    if(!$("budCat").value||lim==null||lim<0)return toast("Chọn danh mục và nhập hạn mức hợp lệ");
+    const lim=moneyValue($("budLimit"));
+    if(!$("budCat").value||isNaN(lim)||lim<0)return toast("Chọn danh mục và nhập hạn mức hợp lệ");
     try{await api("/api/budgets",{method:"POST",body:{category_id:+$("budCat").value,month:$("budMonth").value||monthVN(),limit_amount:lim}});toast("Đã lưu ngân sách");loadBudgets();}
     catch(e){toast(e.message);}
   };
   $("budMonth").addEventListener("change",loadBudgets);
   $("btnAddRec").onclick=async function(){
-    const amt=parseAmount($("recAmount").value);if(!amt||amt<=0)return toast("Nhập số tiền hợp lệ");
+    const amt=moneyValue($("recAmount"));if(!amt||amt<=0)return toast("Nhập số tiền hợp lệ");
     if(!state.accounts.length){try{await loadBase();}catch(e){}}
     if(!state.accounts.length)return toast("Bạn chưa có ví nào — hãy tạo ví ở mục Ví trước rồi mới thêm khoản định kỳ.");
     const body={account_id:+$("recAccount").value,category_id:$("recCat").value?+$("recCat").value:null,kind:$("recKind").value,amount:amt,day_of_month:+$("recDay").value||1,note:$("recNote").value.trim(),auto_create:$("recAuto").checked};
@@ -1642,7 +1773,7 @@ function bindForms(){
   };
   $("btnCancelRec").onclick=function(){cancelEditRec();};
   $("btnAddGoal").onclick=async function(){
-    const tgt=parseAmount($("goalTarget").value);if(!$("goalName").value.trim()||!tgt||tgt<=0)return toast("Nhập tên và số tiền mục tiêu hợp lệ");
+    const tgt=moneyValue($("goalTarget"));if(!$("goalName").value.trim()||!tgt||tgt<=0)return toast("Nhập tên và số tiền mục tiêu hợp lệ");
     try{await api("/api/goals",{method:"POST",body:{name:$("goalName").value.trim(),target_amount:tgt,deadline:$("goalDeadline").value||null}});$("goalName").value="";$("goalTarget").value="";toast("Đã thêm mục tiêu");loadGoals();}
     catch(e){toast(e.message);}
   };
