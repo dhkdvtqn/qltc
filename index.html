@@ -40,6 +40,11 @@ h1{font-size:22px}h2{font-size:18px;margin:4px 0 12px}h3{font-size:16px}
 .calc-row{display:flex;gap:8px;margin-top:8px}
 .calc-row button{flex:1;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:19px;font-weight:700}
 .calc-row button.eq{background:var(--primary);border-color:var(--primary);color:#fff}
+.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-height:228px;overflow-y:auto;padding:2px}
+.cat-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:10px 4px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);font-size:12px;text-align:center;cursor:pointer;min-height:64px}
+.cat-cell .ci{font-size:22px;line-height:1.2}
+.cat-cell .cn{width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cat-cell.sel{border-color:var(--primary);background:var(--soft);box-shadow:0 0 0 1px var(--primary)}
 .btn:disabled{opacity:.55;cursor:not-allowed}
 input,select,textarea{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);font-size:16px}
 textarea{min-height:80px;resize:vertical}
@@ -407,11 +412,14 @@ html{touch-action:pan-x pan-y}
       <button type="button" data-kind="transfer" id="kChuyen">Chuyển tiền</button>
     </div>
     <label>Số tiền (đồng)</label><input id="fAmount" inputmode="numeric" placeholder="VD: 1.000.000+100.000">
-    <div id="calcRow" class="calc-row"><button type="button" data-op="+">+</button><button type="button" data-op="−">−</button><button type="button" data-op="×">×</button><button type="button" data-op="÷">÷</button><button type="button" data-op="=" class="eq">=</button></div>
+    <div id="calcRow" class="calc-row hidden"><button type="button" data-op="+">+</button><button type="button" data-op="−">−</button><button type="button" data-op="×">×</button><button type="button" data-op="÷">÷</button><button type="button" data-op="=" class="eq">=</button></div>
     <label>Ngày</label><input id="fDate" type="date">
     <label id="fAccLabel">Ví</label><select id="fAccount"></select>
     <div id="fToWrap" class="hidden"><label>Ví đích</label><select id="fToAccount"></select></div>
-    <div id="fCatWrap"><label>Danh mục</label><select id="fCategory"></select></div>
+    <div id="fCatWrap"><label>Danh mục</label><input type="hidden" id="fCategory"><div id="fCatGrid" class="cat-grid"></div>
+      <div id="fCatActs" class="row hidden" style="margin-top:8px"><button class="btn small" id="btnEditFCat" type="button">Sửa danh mục</button><button class="btn small danger" id="btnDelFCat" type="button">Xóa danh mục</button></div>
+      <div id="fCatEdit" class="hidden" style="margin-top:8px"><input id="fCatEditName" placeholder="Tên danh mục"><div class="icongrid" id="fCatEditIcons" style="margin-top:8px"></div><input id="fCatEditIcon" type="hidden" value="🏷️"><div class="row" style="margin-top:8px"><button class="btn small primary" id="btnSaveFCat" type="button">Lưu</button><button class="btn small" id="btnCancelFCat" type="button">Hủy</button></div></div>
+    </div>
     <label>Nội dung</label><div class="sugwrap"><input id="fNote" placeholder="VD: Ăn tối gia đình" autocomplete="off"><div class="suglist hidden" id="fNoteSug"></div></div>
     <label>Ghi chú / tag (cách nhau bằng dấu phẩy)</label><div class="sugwrap"><input id="fTags" placeholder="VD: gia đình, cần thiết" autocomplete="off"><div class="suglist hidden" id="fTagsSug"></div></div>
     <div class="row" style="margin-top:16px">
@@ -770,10 +778,47 @@ function fillAccountSelects(){
 }
 function catName(id){const c=state.categories.find(function(x){return String(x.id)===String(id);});return c?c.name:"—";}
 function accName(id){const a=state.accounts.find(function(x){return String(x.id)===String(id);});return a?a.name:"—";}
-function catOptions(kind){
-  return state.categories.filter(function(c){return c.kind===kind;}).map(function(c){
-    const p=c.parent_id?state.categories.find(function(x){return String(x.id)===String(c.parent_id);}):null;
-    return '<option value="'+c.id+'">'+esc((p?p.name+" › ":"")+c.name)+"</option>";}).join("");
+// ---- Luoi chon danh muc trong form giao dich (4 o/dong, cuon doc) ----
+// Gia tri chon luu o input an #fCategory (giu nguyen cach doc .value cu).
+function fCatList(kind){
+  return state.categories.filter(function(c){return c.kind===kind;});
+}
+function renderFCatGrid(){
+  const list=fCatList(state.txKind);
+  const cur=$("fCategory").value;
+  let html='<button type="button" class="cat-cell'+(!cur?" sel":"")+'" data-cat=""><span class="ci">🚫</span><span class="cn">Không chọn</span></button>';
+  html+=list.map(function(c){
+    const sel=String(c.id)===String(cur)?" sel":"";
+    return '<button type="button" class="cat-cell'+sel+'" data-cat="'+c.id+'"><span class="ci">'+esc(c.icon||"🏷️")+'</span><span class="cn">'+esc(c.name)+'</span></button>';
+  }).join("");
+  $("fCatGrid").innerHTML=html;
+  $("fCatGrid").querySelectorAll("button[data-cat]").forEach(function(b){
+    b.onclick=function(){setFCat(b.dataset.cat);};
+  });
+  updateFCatActs();
+}
+function setFCat(id){
+  // Chi nhan id con ton tai (danh muc da xoa thi ve "Khong chon", tranh gui
+  // category_id khong ton tai xuong may chu).
+  const ok=id&&state.categories.some(function(c){return String(c.id)===String(id);});
+  const val=ok?String(id):"";
+  $("fCategory").value=val;
+  $("fCatGrid").querySelectorAll("button[data-cat]").forEach(function(b){
+    b.classList.toggle("sel",String(b.dataset.cat)===val);
+  });
+  updateFCatActs();
+}
+function updateFCatActs(){
+  const id=$("fCategory").value;
+  show("fCatActs",!!id);
+  if(!id)show("fCatEdit",false);
+}
+function setFCatEditIcon(ic){
+  $("fCatEditIcon").value=ic;
+  const g=$("fCatEditIcons");if(!g)return;
+  let btn=g.querySelector('button[data-icon="'+ic+'"]');
+  if(!btn){btn=document.createElement("button");btn.type="button";btn.dataset.icon=ic;btn.textContent=ic;btn.onclick=function(){setFCatEditIcon(ic);};g.prepend(btn);}
+  g.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b===btn);});
 }
 
 /* Thu nho chu so tien trong o KPI cho den khi vua 1 dong (khong xuong dong,
@@ -1121,6 +1166,7 @@ async function openTxModal(kind,tx){
   $("txFormMsg").textContent="";
   if(!state.accounts.length){try{await loadBase();}catch(e){}}
   fillAccountSelects();
+  if(!tx)$("fCategory").value=""; // giao dich moi: chon muc dau tien, khong ke thua lan mo truoc
   setKindUI(state.txKind);
   $("fAmount").value=tx?tx.amount:"";formatMoneyField($("fAmount"));
   $("fDate").value=tx?tx.transaction_date:todayVN();
@@ -1129,7 +1175,9 @@ async function openTxModal(kind,tx){
   $("fNote").value=tx?tx.note||"":"";$("fTags").value=tx?tx.tags||"":"";
   // Nap dung danh muc cua giao dich khi sua (truoc day form sua de danh muc
   // mac dinh o muc dau tien, luu lai la doi nham danh muc).
-  if(tx&&tx.category_id)$("fCategory").value=tx.category_id;
+  if(tx&&tx.category_id)setFCat(tx.category_id);
+  // Nut may tinh an san, chi hien khi nguoi dung cham vao o so tien.
+  show("calcRow",false);
   // Chua co vi thi bao ngay + khoa nut Luu (gui account_id=0 se bi loi khoa ngoai).
   const noAcc=!state.accounts.length;
   $("btnSaveTx").disabled=noAcc;
@@ -1203,7 +1251,15 @@ function setKindUI(kind){
   $("kChi").className=kind==="expense"?"on-chi":"";$("kThu").className=kind==="income"?"on-thu":"";$("kChuyen").className=kind==="transfer"?"on-chuyen":"";
   show("fToWrap",kind==="transfer");show("fCatWrap",kind!=="transfer");
   $("fAccLabel").textContent=kind==="transfer"?"Ví nguồn":"Ví";
-  if(kind!=="transfer")$("fCategory").innerHTML=catOptions(kind);
+  if(kind!=="transfer"){
+    // Doi loai Thu/Chi: giu lua chon cu neu van thuoc loai moi, khong thi
+    // chon muc dau tien (dung nhu select cu tu chon option dau).
+    const list=fCatList(kind);
+    const cur=$("fCategory").value;
+    const keep=list.some(function(c){return String(c.id)===String(cur);});
+    $("fCategory").value=keep?cur:(list[0]?String(list[0].id):"");
+    renderFCatGrid();
+  }
 }
 async function loadTx(){
   try{
@@ -1226,7 +1282,7 @@ async function loadTx(){
         const t=state.tx.find(function(x){return String(x.id)===b.dataset.id;});if(!t)return;
         if(b.dataset.act==="del"){if(!confirm("Xóa giao dịch này?"))return;try{await api("/api/transactions/"+t.id,{method:"DELETE"});toast("Đã xóa");loadTx();}catch(e){toast(e.message);}}
         if(b.dataset.act==="edit"){openTxModal(t.kind,t);}
-        if(b.dataset.act==="copy"){openTxModal(t.kind);$("fAmount").value=t.amount;formatMoneyField($("fAmount"));$("fDate").value=t.transaction_date;$("fNote").value=t.note||"";$("fTags").value=t.tags||"";$("fAccount").value=t.account_id;if(t.category_id)$("fCategory").value=t.category_id;}
+        if(b.dataset.act==="copy"){openTxModal(t.kind);$("fAmount").value=t.amount;formatMoneyField($("fAmount"));$("fDate").value=t.transaction_date;$("fNote").value=t.note||"";$("fTags").value=t.tags||"";$("fAccount").value=t.account_id;if(t.category_id)setFCat(t.category_id);}
       };
     });
   }catch(e){toast(e.message);}
@@ -1707,6 +1763,47 @@ function bindForms(){
     el.focus();
     try{const L=el.value.length;el.setSelectionRange(L,L);}catch(err){}
   });
+  // Nut may tinh chi hien khi dang nhap so. An sau blur co tre 250ms de
+  // cai cham vao nut van kip nhan (blur chay truoc click tren dien thoai);
+  // neu o nhap da focus lai thi khong an.
+  let calcHideT=null;
+  $("fAmount").addEventListener("focus",function(){clearTimeout(calcHideT);show("calcRow",true);});
+  $("fAmount").addEventListener("blur",function(){clearTimeout(calcHideT);calcHideT=setTimeout(function(){if(document.activeElement!==$("fAmount"))show("calcRow",false);},250);});
+  // Sua/Xoa nhanh danh muc dang chon trong form giao dich
+  $("btnDelFCat").onclick=async function(){
+    const id=$("fCategory").value;if(!id)return;
+    const c=state.categories.find(function(x){return String(x.id)===String(id);});
+    if(!confirm("Xóa danh mục \""+(c?c.name:"")+"\"? Giao dịch cũ sẽ mất danh mục."))return;
+    try{await api("/api/categories/"+id,{method:"DELETE"});toast("Đã xóa danh mục");
+      $("fCategory").value="";
+      await loadBase();renderFCatGrid();
+    }catch(e){toast(e.message);}
+  };
+  $("btnEditFCat").onclick=function(){
+    const id=$("fCategory").value;if(!id)return;
+    const c=state.categories.find(function(x){return String(x.id)===String(id);});if(!c)return;
+    $("fCatEditName").value=c.name;
+    setFCatEditIcon(c.icon||"🏷️");
+    show("fCatEdit",true);
+  };
+  $("btnCancelFCat").onclick=function(){show("fCatEdit",false);};
+  $("btnSaveFCat").onclick=async function(){
+    const id=$("fCategory").value;if(!id)return;
+    const name=$("fCatEditName").value.trim();
+    if(!name)return toast("Nhập tên danh mục");
+    const c=state.categories.find(function(x){return String(x.id)===String(id);});
+    try{
+      await api("/api/categories/"+id,{method:"PUT",body:{name:name,parent_id:c?c.parent_id:null,color:c?c.color:"#64748B",icon:$("fCatEditIcon").value.trim()||"🏷️"}});
+      toast("Đã lưu thay đổi");show("fCatEdit",false);
+      await loadBase();renderFCatGrid();
+    }catch(e){toast(e.message);}
+  };
+  // Luoi icon cho sua nhanh danh muc (dung chung bo 90 icon)
+  (function(){
+    const g=$("fCatEditIcons");if(!g)return;
+    g.innerHTML=CAT_ICONS.map(function(ic){return '<button type="button" data-icon="'+ic+'">'+ic+'</button>';}).join("");
+    g.querySelectorAll("button").forEach(function(b){b.onclick=function(){setFCatEditIcon(b.dataset.icon);};});
+  })();
   $("btnSaveTx").onclick=async function(){
     if(!state.accounts.length){$("txFormMsg").textContent="Bạn chưa có ví nào — hãy tạo ví ở mục Ví trước, rồi quay lại thêm giao dịch.";return;}
     const amt=moneyValue($("fAmount"));
