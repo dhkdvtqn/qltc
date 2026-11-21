@@ -59,6 +59,9 @@ label{display:block;font-size:14px;font-weight:600;margin:12px 0 6px}
 .kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;min-width:0}
 .kpi .lbl{font-size:13px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
 .kpi .val{font-size:18px;font-weight:800;margin-top:4px;white-space:nowrap}
+.kpi .kic,.kpi .cmp{display:none}
+.desk-only{display:none}
+.piecard>h3{display:none}
 @media (max-width:480px){.grid3{gap:8px}.kpi{padding:10px 8px}}
 .inc{color:var(--income)}.exp{color:var(--expense)}
 .bar{height:10px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:8px}
@@ -154,17 +157,73 @@ html{touch-action:pan-x pan-y}
 .catbar .tr>i{display:block;height:100%}
 .catbar .pc{width:52px;text-align:right;flex:none;font-weight:600}
 @media (min-width:900px){
-  .wrap{padding:24px 24px 40px;margin-left:250px;max-width:none}
-  .sidebar{display:block;position:fixed;left:0;top:0;bottom:0;width:250px;background:var(--card);border-right:1px solid var(--line);padding:20px 14px;z-index:30;overflow:auto}
+  .wrap{padding:24px 28px 40px;margin-left:250px;max-width:none}
+  .topbar,.view{max-width:1240px;margin-left:auto;margin-right:auto}
+  .topbar{border-bottom:1px solid var(--line);padding-bottom:12px}
+  .sidebar{display:block;position:fixed;left:0;top:0;bottom:0;width:250px;background:var(--card);border-right:1px solid var(--line);padding:22px 16px;z-index:30;overflow:auto}
   .sidebar .brand{font-weight:800;font-size:19px;margin-bottom:4px}
   .sidebar .muted{margin-bottom:18px}
-  .sidebar button{display:flex;width:100%;gap:10px;align-items:center;border:0;background:none;padding:11px 12px;border-radius:10px;font-size:15px;text-align:left;margin-bottom:2px}
+  .sidebar button{display:flex;width:100%;gap:10px;align-items:center;border:0;background:none;padding:12px 14px;border-radius:12px;font-size:15px;text-align:left;margin-bottom:2px}
+  .sidebar button:hover{background:var(--soft)}
   .sidebar button.on{background:var(--soft);color:var(--primary);font-weight:700}
   .sidebar button .ico{font-size:18px;width:24px}
   .bottomnav{display:none}
   .modal{align-items:center;padding:20px}
   .modal .sheet{border-radius:20px}
   #toast{bottom:24px}
+  .desk-only{display:block}
+  .card{border-radius:16px;box-shadow:0 1px 3px rgba(15,23,42,.06);padding:20px}
+  .card h3{margin-bottom:12px}
+  /* KPI: icon + so sanh thang truoc */
+  #view-dashboard .kpi{display:grid;grid-template-columns:52px 1fr;column-gap:12px;padding:18px}
+  #view-dashboard .kpi .kic{display:flex;grid-row:1/4;align-self:center;width:52px;height:52px;border-radius:14px;align-items:center;justify-content:center;font-size:24px}
+  .kpi-inc .kic{background:color-mix(in srgb,var(--income) 13%,transparent)}
+  .kpi-exp .kic{background:color-mix(in srgb,var(--expense) 12%,transparent)}
+  .kpi-bal .kic{background:var(--soft)}
+  .kpi .val{font-size:24px}
+  .kpi .cmp{display:block;font-size:13px;margin-top:2px}
+  /* Pie card: donut trai, bang danh muc phai (900-1199: an cot so tien cho gon) */
+  .piecard>h3{display:block}
+  .piecard .piewrap{display:flex;gap:24px;align-items:center}
+  .piecard #catPie,.piecard #statPie{flex:0 0 300px;max-width:300px}
+  .piecard #catBreak,.piecard #statList{flex:1;min-width:0}
+  .piecard .catbar .nm{width:110px}
+  .piecard .catbar>span:last-child{display:none}
+  /* Bang danh muc o Dashboard: 2 dong (ten + % + tien / thanh ti le full-width) */
+  #catBreak .catbar{flex-wrap:wrap;row-gap:3px}
+  #catBreak .catbar .nm{width:auto;flex:1}
+  #catBreak .catbar .tr{flex:1 1 100%;order:3}
+  #catBreak .catbar>span:last-child{width:auto!important}
+  /* Ngan sach Dashboard: so tien 1 dong, khong be xuong dong duoi */
+  #view-dashboard .budgetcard .row>span{flex:none;white-space:nowrap}
+  /* Bang giao dich gan day */
+  .txtable{width:100%;border-collapse:collapse;font-size:14px}
+  .txtable th{text-align:left;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em;padding:8px 10px;border-bottom:1px solid var(--line)}
+  .txtable td{padding:10px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+  .txtable td.num,.txtable th.num{text-align:right;font-weight:700}
+  .txtable tbody tr{cursor:pointer}
+  .txtable tbody tr:hover{background:var(--soft)}
+  .txtable tr:last-child td{border-bottom:0}
+  #view-settings .card{max-width:780px}
+}
+@media (min-width:1200px){
+  /* Dashboard: 2 cot — pie + ngan sach; dong tien + giao dich gan day full-width */
+  #view-dashboard{display:grid;grid-template-columns:7fr 5fr;gap:16px;align-items:start}
+  #view-dashboard .monthnav,#view-dashboard .grid3,#view-dashboard .flowcard,#view-dashboard .recentcard{grid-column:1/-1}
+  #view-dashboard .card{margin-bottom:0}
+  .piecard #catPie,.piecard #statPie{flex-basis:360px;max-width:360px}
+  .piecard .catbar .nm{width:130px}
+  .piecard .catbar>span:last-child{display:block;width:96px!important}
+  /* Cac muc danh sach + form: 2 cot */
+  #view-accounts,#view-categories,#view-budgets,#view-recurring,#view-goals{display:grid;grid-template-columns:1.15fr 1fr;gap:16px;align-items:start}
+  #view-accounts>h2,#view-categories>h2,#view-budgets>h2,#view-goals>h2,#view-recurring>div:first-child{grid-column:1/-1}
+  #view-accounts .card,#view-categories .card,#view-budgets .card,#view-recurring .card,#view-goals .card{margin-bottom:0}
+  /* Giao dich: bo loc trai, danh sach phai */
+  #view-transactions{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start}
+  #view-transactions>h2{grid-column:1/-1}
+  #view-transactions .card{margin-bottom:0}
+  #view-transactions .card .row{flex-direction:column;align-items:stretch}
+  #view-transactions .card .row>*{min-width:0}
 }
 </style>
 </head>
@@ -232,12 +291,14 @@ html{touch-action:pan-x pan-y}
     <section id="view-dashboard" class="view">
       <div class="monthnav"><button type="button" id="dashPrev" aria-label="Tháng trước">‹</button><span class="mlbl" id="dashMonthLabel">Tháng này</span><button type="button" id="dashNext" aria-label="Tháng sau">›</button></div>
       <div class="grid3" style="margin-bottom:12px">
-        <div class="kpi"><div class="lbl">Thu</div><div class="val inc" id="kInc">—</div></div>
-        <div class="kpi"><div class="lbl">Chi</div><div class="val exp" id="kExp">—</div></div>
-        <div class="kpi"><div class="lbl">Dư</div><div class="val" id="kTotal">—</div></div>
+        <div class="kpi kpi-inc"><span class="kic">📥</span><div class="lbl">Thu</div><div class="val inc" id="kInc">—</div><div class="cmp" id="kIncCmp"></div></div>
+        <div class="kpi kpi-exp"><span class="kic">📤</span><div class="lbl">Chi</div><div class="val exp" id="kExp">—</div><div class="cmp" id="kExpCmp"></div></div>
+        <div class="kpi kpi-bal"><span class="kic">💰</span><div class="lbl">Dư</div><div class="val" id="kTotal">—</div><div class="cmp" id="kTotCmp"></div></div>
       </div>
-      <div class="card"><div id="catPie"></div><div id="catBreak"></div><p class="muted" style="margin-top:6px">Bấm vào một hạng mục để xem chi tiết các khoản chi.</p></div>
-      <div class="card"><h3 id="budgetTitle">🎯 Ngân sách tháng này</h3><div id="budgetDash"></div></div>
+      <div class="card piecard"><h3>Chi tiêu theo danh mục</h3><div class="piewrap"><div id="catPie"></div><div id="catBreak"></div></div><p class="muted" style="margin-top:6px">Bấm vào một hạng mục để xem chi tiết các khoản chi.</p></div>
+      <div class="card budgetcard"><h3 id="budgetTitle">🎯 Ngân sách tháng này</h3><div id="budgetDash"></div></div>
+      <div class="card flowcard desk-only"><h3>Dòng tiền theo tháng</h3><div id="flowChart"></div></div>
+      <div class="card recentcard desk-only"><h3>Giao dịch gần đây</h3><div id="recentTx"></div><button class="linkbtn" id="btnRecentAll" type="button">Xem tất cả giao dịch →</button></div>
     </section>
 
     <section id="view-transactions" class="view hidden">
@@ -341,7 +402,7 @@ html{touch-action:pan-x pan-y}
         <p class="muted" id="statRangeLabel" style="margin-top:8px"></p>
       </div>
       <div class="card hidden" id="statSummaryCard"><h3>📌 Tóm lược toàn bộ thời gian</h3><div id="statSummary"></div></div>
-      <div class="card" id="statPieCard"><div id="statPie"></div><div id="statList"></div><p class="muted" style="margin-top:6px">Bấm vào một hạng mục để xem lịch sử thu/chi.</p></div>
+      <div class="card piecard" id="statPieCard"><div class="piewrap"><div id="statPie"></div><div id="statList"></div></div><p class="muted" style="margin-top:6px">Bấm vào một hạng mục để xem lịch sử thu/chi.</p></div>
       <div class="card hidden" id="statTrendCard"><h3>📈 Khuynh hướng thu – chi</h3><canvas id="statLine" width="640" height="240"></canvas><p class="muted">■ Thu &nbsp; ■ Chi</p><div id="statTrendList"></div></div>
     </section>
 
@@ -894,6 +955,71 @@ function fitKpi(el){
 
 /* ================= Dashboard ================= */
 function dashMonthLabel(m){return "Tháng "+(+m.slice(5))+"/"+m.slice(0,4);}
+// So sanh voi thang truoc cho the KPI (chi hien tren desktop).
+function setCmp(el,cur,prev,goodUp){
+  if(!el)return;
+  if(!prev){el.textContent=cur>0?"Mới trong tháng này":"—";el.className="cmp";return;}
+  const p=(cur-prev)/prev*100;
+  if(Math.abs(p)<0.05){el.textContent="Không đổi so với tháng trước";el.className="cmp";return;}
+  const up=p>0;
+  el.textContent=(up?"▲ ":"▼ ")+(Math.round(Math.abs(p)*10)/10)+"% so với tháng trước";
+  el.className="cmp "+((up===goodUp)?"inc":"exp");
+}
+function fmtShort(v){
+  v=Math.abs(v);
+  if(v>=1e9)return (Math.round(v/1e8)/10)+" tỷ";
+  if(v>=1e6)return (Math.round(v/1e5)/10)+"tr";
+  if(v>=1e3)return (Math.round(v/1e2)/10)+"k";
+  return String(Math.round(v));
+}
+// Bieu do cot nhom Thu (xanh) / Chi (do) theo thang, du 12 thang cua nam.
+function flowBarsSVG(flow,year){
+  const byM={};(flow||[]).forEach(function(r){byM[r.month]=r;});
+  const W=640,H=240,padL=44,padB=26,padT=16,plotW=W-padL-12,plotH=H-padT-padB;
+  let mx=0;const data=[];
+  for(let m=1;m<=12;m++){
+    const k=year+"-"+String(m).padStart(2,"0");
+    const r=byM[k]||{income:0,expense:0};
+    data.push({m:m,inc:+r.income||0,exp:+r.expense||0});
+    mx=Math.max(mx,+r.income||0,+r.expense||0);
+  }
+  if(mx<=0)return '<p class="muted">Chưa có dữ liệu dòng tiền trong năm nay.</p>';
+  const y=function(v){return padT+plotH-(v/mx)*plotH;};
+  let out='<svg class="chart-svg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Dòng tiền theo tháng">';
+  out+='<text x="'+padL+'" y="11" style="fill:#16A34A" font-size="12" font-weight="700">■ Thu</text><text x="'+(padL+56)+'" y="11" style="fill:#DC2626" font-size="12" font-weight="700">■ Chi</text>';
+  [0,0.5,1].forEach(function(f){
+    const yy=y(mx*f);
+    out+='<line x1="'+padL+'" y1="'+yy.toFixed(1)+'" x2="'+(W-12)+'" y2="'+yy.toFixed(1)+'" style="stroke:var(--line)" stroke-width="1"/><text x="'+(padL-6)+'" y="'+(yy+4).toFixed(1)+'" text-anchor="end" class="axis">'+fmtShort(mx*f)+'</text>';
+  });
+  const slot=plotW/12,bw=Math.min(18,(slot-12)/2);
+  data.forEach(function(d,i){
+    const x0=padL+i*slot+(slot-2*bw-3)/2;
+    const h1=(d.inc/mx)*plotH,h2=(d.exp/mx)*plotH;
+    out+='<rect class="barcol" x="'+x0.toFixed(1)+'" y="'+y(d.inc).toFixed(1)+'" width="'+bw+'" height="'+Math.max(h1,0).toFixed(1)+'" rx="3" fill="#16A34A"><title>T'+d.m+' • Thu '+fmt(d.inc)+'</title></rect>';
+    out+='<rect class="barcol" x="'+(x0+bw+3).toFixed(1)+'" y="'+y(d.exp).toFixed(1)+'" width="'+bw+'" height="'+Math.max(h2,0).toFixed(1)+'" rx="3" fill="#DC2626"><title>T'+d.m+' • Chi '+fmt(d.exp)+'</title></rect>';
+    out+='<text x="'+(padL+i*slot+slot/2).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle" class="axis">T'+d.m+'</text>';
+  });
+  out+='</svg>';
+  return out;
+}
+function renderRecentTx(list){
+  const el=$("recentTx");if(!el)return;
+  if(!list.length){el.innerHTML='<p class="muted">Chưa có giao dịch trong tháng này.</p>';return;}
+  el.innerHTML='<table class="txtable"><thead><tr><th>Ngày</th><th>Nội dung</th><th>Danh mục</th><th>Ví</th><th class="num">Số tiền</th></tr></thead><tbody>'+
+    list.map(function(t){
+      const sign=t.kind==="income"?"+":(t.kind==="expense"?"−":"⇄");
+      const cls=t.kind==="income"?"inc":(t.kind==="expense"?"exp":"");
+      const dd=t.transaction_date||"";
+      const ds=dd.length>=10?dd.slice(8,10)+"/"+dd.slice(5,7):dd;
+      return '<tr data-id="'+t.id+'" data-kind="'+t.kind+'"><td class="dt">'+esc(ds)+'</td><td class="nt">'+esc(t.note||catName(t.category_id)||"Giao dịch")+'</td><td>'+esc(t.category_name||catName(t.category_id)||"—")+'</td><td>'+esc(t.account_name||accName(t.account_id)||"—")+'</td><td class="num '+cls+'">'+sign+" "+fmt(t.amount)+'</td></tr>';
+    }).join("")+'</tbody></table>';
+  el.querySelectorAll("tr[data-id]").forEach(function(tr){
+    tr.onclick=function(){
+      const t=list.find(function(x){return String(x.id)===tr.dataset.id;});
+      if(t)openTxModal(t.kind,t);
+    };
+  });
+}
 function shiftDashMonth(delta){
   const m=state.dashMonth||monthVN();
   const d=new Date(+m.slice(0,4),+m.slice(5)-1+delta,1);
@@ -916,7 +1042,7 @@ async function loadDashboard(){
     $("budgetTitle").textContent="🎯 Ngân sách "+lbl.toLowerCase();
     const pieRows=assignPieColors(d.byCategory||[]);
     const tot=pieRows.reduce(function(s,x){return s+Number(x.total||0);},0);
-    renderPie($("catPie"),pieRows);
+    renderPie($("catPie"),pieRows,"Tổng chi");
     $("catBreak").innerHTML=pieRows.length?pieRows.map(function(x){
       const p=tot?Math.round(Number(x.total)/tot*100):0;
       return '<div class="catbar click" data-cat="'+escAttr(x.category||"")+'"><span class="nm">'+esc(x.category||"Chưa phân loại")+'</span><span class="tr"><i style="width:'+p+'%;background:'+esc(x.color)+'"></i></span><span class="pc">'+p+'%</span><span style="width:110px;text-align:right">'+fmt(x.total)+'</span></div>';}).join(""):'<p class="muted">Chưa có chi tiêu trong tháng này.</p>';
@@ -927,6 +1053,26 @@ async function loadDashboard(){
       const p=b.limit_amount?Math.round(b.spent/b.limit_amount*100):0;
       const cls=p>=100?"over":(p>=80?"warn":"");
       return '<div style="margin-bottom:12px"><div class="row"><b style="flex:1">'+esc(b.category_name)+'</b><span>'+fmt(b.spent)+' / '+fmt(b.limit_amount)+' ('+p+'%)</span></div><div class="bar '+cls+'"><i style="width:'+Math.min(p,100)+'%"></i></div></div>';}).join(""):'<p class="muted">Chưa đặt ngân sách tháng này. Vào mục Ngân sách để đặt.</p>';
+    // So sanh voi thang truoc (chi hien tren desktop; du lieu da co san).
+    setCmp($("kIncCmp"),d.income,d.prevIncome||0,true);
+    setCmp($("kExpCmp"),d.expense,d.prevExpense||0,false);
+    const prevSaving=(d.prevIncome||0)-(d.prevExpense||0);
+    const diff=d.saving-prevSaving;
+    const tc=$("kTotCmp");
+    if(tc){
+      if(diff===0){tc.textContent="Không đổi so với tháng trước";tc.className="cmp";}
+      else{tc.textContent=(diff>0?"▲ +":"▼ −")+fmt(Math.abs(diff))+" so với tháng trước";tc.className="cmp "+(diff>0?"inc":"exp");}
+    }
+    // Bieu do dong tien theo thang (an tren dien thoai).
+    $("flowChart").innerHTML=flowBarsSVG(d.flow||[],m.slice(0,4));
+    // Giao dich gan day (chi tai tren desktop).
+    if(window.innerWidth>=900){
+      try{
+        const txd=await api("/api/transactions?month="+encodeURIComponent(m));
+        const list=(txd.transactions||[]).slice().sort(function(a,b){return String(b.transaction_date).localeCompare(String(a.transaction_date));}).slice(0,8);
+        renderRecentTx(list);
+      }catch(e){renderRecentTx([]);}
+    }
   }catch(e){toast(e.message);}
 }
 /* Chi tiet cac khoan chi cua 1 danh muc trong thang dang xem o Tong quan */
@@ -1031,13 +1177,13 @@ function explodeSlice(g,on){
   g.style.transform="translate("+(Math.cos(mid)*10).toFixed(1)+"px,"+(Math.sin(mid)*10).toFixed(1)+"px)";
 }
 const PIE_W=720,PIE_H=412,PIE_CX=360,PIE_CY=198,PIE_R=183;
-function sliceIndexAt(rows,total,vx,vy){
+function sliceIndexAt(rows,total,vx,vy,innerR){
   // Tim lat pie theo vi tri cham (toa do viewBox): tinh goc quanh tam roi
   // doi ra lat tuong ung — lat mong van bam duoc, ke ca khi bam vao nhan.
   if(!rows||!rows.length||!total)return null;
   const dx=vx-PIE_CX,dy=vy-PIE_CY;
   const dist=Math.sqrt(dx*dx+dy*dy);
-  if(dist>PIE_R+30)return null;
+  if(dist>PIE_R+30||dist<(innerR||0))return null;
   let rel=Math.atan2(dy,dx)+Math.PI/2;if(rel<0)rel+=Math.PI*2;
   const f=rel/(Math.PI*2);
   let acc=0;
@@ -1061,8 +1207,9 @@ function bindChartTips(el){
     const svg=el.querySelector("svg");if(!svg)return null;
     const rct=svg.getBoundingClientRect();
     if(!rct.width||!rct.height)return null;
-    const vx=(x-rct.left)/rct.width*PIE_W,vy=(y-rct.top)/rct.height*PIE_H;
-    return sliceIndexAt(d.rows,d.total,vx,vy);
+    const vb=d.vb||{x:0,y:0,w:PIE_W,h:PIE_H};
+    const vx=vb.x+(x-rct.left)/rct.width*vb.w,vy=vb.y+(y-rct.top)/rct.height*vb.h;
+    return sliceIndexAt(d.rows,d.total,vx,vy,d.desk?PIE_R*0.62:0);
   }
   el.addEventListener("pointerover",function(e){
     if(el._pieData){
@@ -1107,14 +1254,17 @@ function bindChartTips(el){
 /* --- Bieu do cot dong tien (SVG) --- */
 /* --- Bieu do pie 3D (SVG) --- */
 let pieUid=0;
-function pieSVG(rows,p,uid){
-  const W=PIE_W,H=PIE_H,cx=PIE_CX,cy=PIE_CY,r=PIE_R,d=16;
+function pieSVG(rows,p,uid,desk,label){
+  const W=PIE_W,H=PIE_H,cx=PIE_CX,cy=PIE_CY,r=PIE_R,d=desk?0:16;
+  // Desktop: cat viewBox sat vao bieu do (bo khoang trong 2 ben danh cho
+  // callout tren dien thoai), ve dang donut phang, tong o giua.
+  const vb=desk?{x:150,y:0,w:420,h:412}:{x:0,y:0,w:720,h:412};
   const tot=(rows||[]).reduce(function(s,x){return s+Number(x.total||0);},0);
-  let out='<svg class="chart-svg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Biểu đồ hình tròn">';
+  let out='<svg class="chart-svg" viewBox="'+vb.x+' '+vb.y+' '+vb.w+' '+vb.h+'" role="img" aria-label="Biểu đồ hình tròn">';
   out+='<defs><radialGradient id="'+uid+'hi" cx="38%" cy="30%" r="75%"><stop offset="0%" stop-color="#fff" stop-opacity="0.22"/><stop offset="60%" stop-color="#fff" stop-opacity="0"/></radialGradient><filter id="'+uid+'sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#0F172A" flood-opacity="0.20"/></filter></defs>';
-  if(!tot||!rows.length){out+='<text x="16" y="30" fill="#64748B" font-size="14">Chưa có dữ liệu.</text></svg>';return out;}
+  if(!tot||!rows.length){out+='<text x="'+cx+'" y="'+cy+'" text-anchor="middle" fill="#64748B" font-size="14">Chưa có dữ liệu.</text></svg>';return out;}
   out+='<g filter="url(#'+uid+'sh)">';
-  out+='<circle cx="'+cx+'" cy="'+(cy+d)+'" r="'+r+'" fill="#0F172A" opacity="0.16"/>';
+  if(!desk)out+='<circle cx="'+cx+'" cy="'+(cy+d)+'" r="'+r+'" fill="#0F172A" opacity="0.16"/>';
   let a=-Math.PI/2;
   const labels=[];
   rows.forEach(function(x){
@@ -1129,7 +1279,7 @@ function pieSVG(rows,p,uid){
     const tip="<b>"+esc(x.category||"Khác")+"</b><br>"+fmt(x.total)+" ("+pct+"%)";
     let inner="";
     const s=Math.max(a,0),e=Math.min(a1,Math.PI);
-    if(e>s){
+    if(!desk&&e>s){
       const p1=P(s),p2=P(e);
       inner+='<path d="M '+f1(p1[0])+' '+f1(p1[1])+' A '+r+' '+r+' 0 0 1 '+f1(p2[0])+' '+f1(p2[1])+' L '+f1(p2[0])+' '+f1(p2[1]+d)+' A '+r+' '+r+' 0 0 0 '+f1(p1[0])+' '+f1(p1[1]+d)+' Z" fill="'+shadeColor(col,0.62)+'"/>';
     }
@@ -1141,11 +1291,18 @@ function pieSVG(rows,p,uid){
       inner+='<path d="M '+cx+' '+cy+' L '+f1(p0[0])+' '+f1(p0[1])+' A '+r+' '+r+' 0 '+large+' 1 '+f1(p3[0])+' '+f1(p3[1])+' Z" fill="'+col+'"/>';
     }
     out+='<g class="slice" data-mid="'+mid.toFixed(3)+'" data-tip="'+escAttr(tip)+'">'+inner+'</g>';
-    if(p>=0.999)labels.push({mid:mid,text:(x.category||"Khác")+" "+pct+"%",y:cy+Math.sin(mid)*(r+12)});
+    if(!desk&&p>=0.999)labels.push({mid:mid,text:(x.category||"Khác")+" "+pct+"%",y:cy+Math.sin(mid)*(r+12)});
     a=a1;
   });
   out+='<ellipse cx="'+cx+'" cy="'+cy+'" rx="'+r+'" ry="'+r+'" fill="url(#'+uid+'hi)"/>';
   out+='</g>';
+  if(desk){
+    // Lo donut + tong o giua (co chu co gian theo do dai so tien).
+    out+='<circle cx="'+cx+'" cy="'+cy+'" r="'+(r*0.62).toFixed(1)+'" style="fill:var(--card)"/>';
+    const tt=fmt(tot),fs=tt.length>15?20:(tt.length>12?24:30);
+    out+='<text x="'+cx+'" y="'+(cy-8)+'" text-anchor="middle" style="fill:var(--text)" font-size="'+fs+'" font-weight="800">'+esc(tt)+'</text>';
+    out+='<text x="'+cx+'" y="'+(cy+16)+'" text-anchor="middle" style="fill:var(--muted)" font-size="13">'+esc(label||"Tổng cộng")+'</text>';
+  }
   // Nhan chia 2 cot trai/phai, dan theo chieu doc rieng tung cot de tat ca
   // nhan deu doc duoc ke ca khi co nhieu lat.
   const leftLabels=labels.filter(function(lb){return Math.cos(lb.mid)<0;});
@@ -1169,14 +1326,16 @@ function pieSVG(rows,p,uid){
   out+='</svg>';
   return out;
 }
-function renderPie(el,rows){
+function renderPie(el,rows,label){
   if(!el)return;
   bindChartTips(el);
   const uid="pie"+(++pieUid);
   const list=rows||[];
   const tot=list.reduce(function(s,x){return s+Number(x.total||0);},0);
-  el._pieData={rows:list,total:tot};
-  if(!tot||!list.length){el.innerHTML=pieSVG(list,1,uid);return;}
+  // Desktop (>=900px): donut phang, khong callout; dien thoai giu pie 3D + callout.
+  const desk=window.matchMedia("(min-width:900px)").matches;
+  el._pieData={rows:list,total:tot,desk:desk,vb:desk?{x:150,y:0,w:420,h:412}:{x:0,y:0,w:PIE_W,h:PIE_H}};
+  if(!tot||!list.length){el.innerHTML=pieSVG(list,1,uid,desk,label);return;}
   const tok=(el._pieToken=(el._pieToken||0)+1);
   const t0=performance.now(),dur=700;
   el.style.pointerEvents="none";
@@ -1184,7 +1343,7 @@ function renderPie(el,rows){
     if(tok!==el._pieToken)return;
     const t=Math.min(1,(now-t0)/dur);
     const e=1-Math.pow(1-t,3);
-    el.innerHTML=pieSVG(list,e,uid);
+    el.innerHTML=pieSVG(list,e,uid,desk,label);
     if(t<1)requestAnimationFrame(frame);
     else el.style.pointerEvents="";
   })(t0);
@@ -1621,7 +1780,7 @@ async function loadStats(){
     const q=r?("?kind="+statState.kind+"&from="+encodeURIComponent(r.from)+"&to="+encodeURIComponent(r.to)):("?kind="+statState.kind);
     const d=await api("/api/stats"+q);
     const statPieRows=assignPieColors(d.byCategory||[]);
-    renderPie($("statPie"),statPieRows);
+    renderPie($("statPie"),statPieRows,statState.kind==="income"?"Tổng thu":"Tổng chi");
     $("statList").innerHTML=statListHTML(statPieRows,d.total||0);
     $("statList").querySelectorAll(".catbar.click").forEach(function(el){
       el.onclick=function(){openStatCatDetail(el.getAttribute("data-cat")||"");};
@@ -1814,6 +1973,7 @@ function bindForms(){
     calcPadApply(el,key);
     el.focus();
   });
+  $("btnRecentAll").onclick=function(){go("transactions");};
   // Sua/Xoa nhanh danh muc dang chon trong form giao dich
   $("btnDelFCat").onclick=async function(){
     const id=$("fCategory").value;if(!id)return;
