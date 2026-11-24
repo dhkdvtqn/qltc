@@ -76,18 +76,37 @@ h1{font-size:22px}h2{font-size:18px;margin:4px 0 12px}h3{font-size:16px}
 .dr-note{font-weight:700;font-size:15px}
 .dr-acc{color:var(--muted);font-size:13px;margin-top:2px}
 .dr-amt{font-weight:700;font-size:15px;white-space:nowrap;padding-top:2px}
-#todayList .tx-btns{display:flex;flex-direction:row;margin-top:8px}
-#todayList .tx-btns .btn{flex:1}
+.day-item .tx-btns{display:flex;flex-direction:row;margin-top:8px}
+.day-item .tx-btns .btn{flex:1}
 @media (max-width:899px){
-  /* Dien thoai: nut Sua/Xoa o Hom nay chi hien khi bam vao dong */
-  #todayList .tx-btns{display:none}
-  #todayList .tx-btns.open{display:flex}
+  /* Dien thoai: nut hanh dong chi hien khi bam vao dong */
+  .day-item .tx-btns{display:none}
+  .day-item .tx-btns.open{display:flex}
   /* Pie: legend lui xuong, cach bieu do ro hon */
   #catBreak,#statList{margin-top:16px}
 }
 /* Checkbox/radio trong card bao cao: reset kieu input form (width 100% /
    min-height) keo dai, de hang tuy chon chi cao bang dong chu. */
 #reportCard input[type="checkbox"],#reportCard input[type="radio"]{width:auto;min-height:0;padding:0;margin:0;flex:none}
+/* Tab o muc Hom nay: Hang ngay / Ngay / Thang / Note */
+.tabs{display:flex;gap:6px;margin:10px 0}
+.tabs button{flex:1;padding:9px 4px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);font-weight:600;font-size:14px;min-height:0}
+.tabs button.active{background:var(--primary);border-color:var(--primary);color:#fff}
+/* Lich thang o tab Ngay: moi o hien so tien Thu/Chi cua ngay do */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-hd{font-size:12px;font-weight:700;color:var(--muted);text-align:center;padding:4px 0}
+.cal-cell{border:1px solid var(--line);border-radius:8px;min-height:62px;padding:4px 2px;text-align:center;cursor:pointer;background:var(--card)}
+.cal-cell .d{font-weight:700;font-size:14px}
+.cal-cell .a{font-size:11px;line-height:1.5;white-space:nowrap}
+.cal-cell.today{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary)}
+.cal-cell.sel{background:var(--soft);border-color:var(--primary)}
+.cal-cell.empty{border-color:transparent;cursor:default}
+/* Accordion thang -> ngay o tab Thang */
+.mrow,.mday{display:flex;align-items:center;gap:8px;padding:12px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.mday{padding:9px 0 9px 12px}
+.mrow .mt,.mday .md{font-weight:700;white-space:nowrap}
+.mrow .ms,.mday .ms{margin-left:auto;font-size:13px;white-space:nowrap}
+.mday-txs{padding:2px 0 6px 12px}
 /* KPI Thu/Chi o Tong quan bam duoc de doi so lieu pie */
 .kpi.click{cursor:pointer}
 .kpi.sel{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary)}
@@ -372,9 +391,30 @@ html{touch-action:pan-x pan-y}
     </section>
 
     <section id="view-today" class="view hidden">
-      <div class="card"><div id="todayHead"></div><div id="todayList" style="margin-top:6px"></div>
-      <p class="muted" style="margin-top:10px">Bấm vào một giao dịch để hiện nút Sửa / Xóa.</p>
-      <div class="add-tx-wrap" style="margin-top:12px"><button class="btn primary block" id="btnAddTxToday" type="button">＋ Thêm giao dịch</button></div></div>
+      <div class="monthnav" id="todayMonthNav"><button type="button" id="todayPrev" aria-label="Tháng trước">‹</button><span class="mlbl" id="todayMonthLabel">Tháng này</span><button type="button" id="todayNext" aria-label="Tháng sau">›</button></div>
+      <div class="tabs" id="todayTabs">
+        <button type="button" data-tab="daily" class="active">Hàng ngày</button>
+        <button type="button" data-tab="calendar">Ngày</button>
+        <button type="button" data-tab="months">Tháng</button>
+        <button type="button" data-tab="notes">Note</button>
+      </div>
+      <div class="card" id="todaySumCard"><div class="grid3" id="todayMonthSum"></div></div>
+      <div id="todayPanelDaily">
+        <div class="card"><div id="todayList"></div>
+        <p class="muted" style="margin-top:10px">Bấm vào một giao dịch để hiện nút Sửa / Xóa.</p>
+        <div class="add-tx-wrap" style="margin-top:12px"><button class="btn primary block" id="btnAddTxToday" type="button">＋ Thêm giao dịch</button></div></div>
+      </div>
+      <div id="todayPanelCal" class="hidden">
+        <div class="card"><div id="todayCal"></div></div>
+        <div class="card"><div id="todayCalDetail"></div></div>
+      </div>
+      <div id="todayPanelMonths" class="hidden">
+        <div class="card"><div class="monthnav" style="margin-bottom:6px"><button type="button" id="todayYearPrev" aria-label="Năm trước">‹</button><span class="mlbl" id="todayYearLabel">2026</span><button type="button" id="todayYearNext" aria-label="Năm sau">›</button></div><div id="todayMonths"></div></div>
+      </div>
+      <div id="todayPanelNotes" class="hidden">
+        <div class="card"><div id="todayNoteList"></div>
+        <div style="margin-top:12px"><button class="btn block" id="btnGoNotes" type="button">＋ Thêm ghi chú</button></div></div>
+      </div>
     </section>
 
     <section id="view-notes" class="view hidden">
@@ -394,7 +434,7 @@ html{touch-action:pan-x pan-y}
         <div class="row" style="flex-direction:column;align-items:stretch"><input id="txMonth" type="month"><input id="txSearch" type="search" placeholder="Tìm nội dung, tag…"><select id="txCatFilter"><option value="">Tất cả danh mục</option></select></div>
         <div class="add-tx-wrap" style="margin-top:10px"><button class="btn primary block" id="btnAddTxTop" type="button">＋ Thêm giao dịch</button></div>
       </div>
-      <div class="card"><div id="txList"></div><p id="txSummary" class="muted" style="margin-top:10px"></p></div>
+      <div class="card"><div id="txList"></div><p class="muted" style="margin-top:8px">Bấm vào một giao dịch để hiện nút Sao chép / Sửa / Xóa.</p><p id="txSummary" class="muted" style="margin-top:4px"></p></div>
     </section>
 
     <section id="view-accounts" class="view hidden">
@@ -859,7 +899,7 @@ function logout(silent){
 }
 
 /* ================= State ================= */
-const state={user:null,accounts:[],categories:[],tx:[],budgets:[],recurrings:[],goals:[],view:"transactions",txKind:"expense",editingId:null,editingRecId:null,editingAccId:null,impRows:[],impHeaders:[],dashMonth:null,editingTags:"",editingTxAccount:null,catDetailCtx:null,fCatAdding:false,dashPieKind:"expense",dashExpRows:[],dashExpTot:0};
+const state={user:null,accounts:[],categories:[],tx:[],budgets:[],recurrings:[],goals:[],view:"transactions",txKind:"expense",editingId:null,editingRecId:null,editingAccId:null,impRows:[],impHeaders:[],dashMonth:null,editingTags:"",editingTxAccount:null,catDetailCtx:null,fCatAdding:false,dashPieKind:"expense",dashExpRows:[],dashExpTot:0,todayMonth:null,todayTab:"daily",todayTxCache:{},todayCalSel:null,todayYear:null};
 const NAV=[
   ["today","📅","Hôm nay"],["dashboard","🏠","Tổng quan"],["transactions","↕️","Giao dịch"],["accounts","💰","Ví"],
   ["notes","📝","Note"],
@@ -928,7 +968,7 @@ function go(view){
 }
 function showApp(on){
   show("authView",!on);show("appView",on);
-  if(on){buildNav();$("whoBox").textContent=(state.user?state.user.email:"")+(state.user&&state.user.role==="admin"?" • Admin":"");go("transactions");}
+  if(on){buildNav();$("whoBox").textContent=(state.user?state.user.email:"")+(state.user&&state.user.role==="admin"?" • Admin":"");go("today");}
   else{showAuth();}
 }
 function showAuth(){
@@ -1043,7 +1083,9 @@ function clearDefaultAccountId(id){
 // so (giao dich, Tong quan, Thong ke) + modal chi tiet danh muc neu dang mo.
 // Truoc day chi nap lai giao dich + Tong quan nen tong o Thong ke bi cu.
 function refreshAfterTx(){
+  state.todayTxCache={};
   loadTx();loadDashboard();loadStats();
+  if(state.view==="today")loadToday();
   if(state.catDetailCtx&&!$("catDetailModal").classList.contains("hidden"))reloadCatDetail();
 }
 function reloadCatDetail(){
@@ -1759,11 +1801,6 @@ function setKindUI(kind){
   }
 }
 /* Dong giao dich + nut Sao chep/Sua/Xoa dung chung (muc Giao dich + Hom nay) */
-function txRowHTML(t){
-  const sign=t.kind==="income"?"+":(t.kind==="expense"?"−":"⇄");
-  const cls=t.kind==="income"?"inc":(t.kind==="expense"?"exp":"");
-  return '<div class="list-item"><span class="ic">'+(t.kind==="transfer"?"⇄":(t.kind==="income"?"💰":"🛒"))+'</span><div class="mid"><div class="t">'+esc(t.note||catName(t.category_id)||"Giao dịch")+'</div><div class="s">'+esc(t.transaction_date)+" • "+esc(t.category_name||catName(t.category_id))+" • "+esc(t.account_name||accName(t.account_id))+(t.tags?" • "+esc(t.tags):"")+'</div></div><div class="amt '+cls+'">'+sign+" "+fmt(t.amount)+'</div><div class="tx-btns"><button class="btn small" data-act="copy" data-id="'+t.id+'">Sao chép</button>'+(t.kind!=="transfer"?'<button class="btn small" data-act="edit" data-id="'+t.id+'">Sửa</button>':"")+'<button class="btn small danger" data-act="del" data-id="'+t.id+'">Xóa</button></div></div>';
-}
 function bindTxRowBtns(box,rows){
   box.querySelectorAll("button[data-act]").forEach(function(b){
     b.onclick=async function(){
@@ -1785,19 +1822,48 @@ async function loadTx(){
     const d=await api(path);state.tx=d.transactions||[];
     let inc=0,exp=0;
     state.tx.forEach(function(t){if(t.kind==="income")inc+=t.amount;else if(t.kind==="expense")exp+=t.amount;});
-    $("txList").innerHTML=state.tx.length?state.tx.map(txRowHTML).join(""):'<p class="muted">Chưa có giao dịch trong tháng này.</p>';
+    const groups=groupByDay(state.tx);
+    $("txList").innerHTML=groups.length?groups.map(function(g){return dayGroupHTML(g,true);}).join(""):'<p class="muted">Chưa có giao dịch trong tháng này.</p>';
     $("txSummary").textContent=state.tx.length+" giao dịch • Thu "+fmt(inc)+" • Chi "+fmt(exp)+" • Chênh lệch "+fmt(inc-exp);
-    bindTxRowBtns($("txList"),state.tx);
+    bindTodayRows($("txList"),state.tx);
   }catch(e){toast(e.message);}
 }
-/* Dong giao dich kieu lich ngay (muc Hom nay): danh muc | noi dung + vi |
-   so tien, khong icon. Bam vao dong moi hien nut Sua/Xoa (mobile). */
-function todayRowHTML(t){
+/* Dong giao dich kieu lich ngay (muc Hom nay + Giao dich): danh muc |
+   noi dung + vi | so tien, khong icon. Bam vao dong moi hien nut (mobile). */
+function todayRowHTML(t,withCopy){
   const inc=t.kind==="income",trf=t.kind==="transfer";
   const sign=inc?"+ ":trf?"⇄ ":"− ";
   const cls=inc?"inc":trf?"":"exp";
   const cat=t.category_name||catName(t.category_id)||(trf?"Chuyển khoản":"");
-  return '<div class="day-item"><div class="day-row click" data-txid="'+t.id+'"><span class="dr-cat">'+esc(cat)+'</span><div class="dr-mid"><div class="dr-note">'+esc(t.note||cat||"Giao dịch")+'</div><div class="dr-acc">'+esc(t.account_name||accName(t.account_id))+'</div></div><div class="dr-amt '+cls+'">'+sign+fmt(t.amount)+'</div></div><div class="tx-btns">'+(trf?"":'<button class="btn small" data-act="edit" data-id="'+t.id+'">Sửa</button>')+'<button class="btn small danger" data-act="del" data-id="'+t.id+'">Xóa</button></div></div>';
+  return '<div class="day-item"><div class="day-row click" data-txid="'+t.id+'"><span class="dr-cat">'+esc(cat)+'</span><div class="dr-mid"><div class="dr-note">'+esc(t.note||cat||"Giao dịch")+'</div><div class="dr-acc">'+esc(t.account_name||accName(t.account_id))+'</div></div><div class="dr-amt '+cls+'">'+sign+fmt(t.amount)+'</div></div><div class="tx-btns">'+(withCopy&&!trf?'<button class="btn small" data-act="copy" data-id="'+t.id+'">Sao chép</button>':"")+(trf?"":'<button class="btn small" data-act="edit" data-id="'+t.id+'">Sửa</button>')+'<button class="btn small danger" data-act="del" data-id="'+t.id+'">Xóa</button></div></div>';
+}
+/* Nhom giao dich theo ngay (moi nhat truoc) + dau ngay kieu lich ngay.
+   Dung chung cho tab Hang ngay, tab Thang va muc Giao dich. */
+function wdInfo(iso){
+  const wd=new Date(+iso.slice(0,4),+iso.slice(5,7)-1,+iso.slice(8)).getDay();
+  return {txt:wd===0?"CN":"Th "+(wd+1),cls:wd===0?" sun":wd===6?" sat":""};
+}
+function dayHeadHTML(iso,inc,exp){
+  const w=wdInfo(iso);
+  return '<div class="day-head"><span class="dh-num">'+(+iso.slice(8))+'</span><span class="dh-wd'+w.cls+'">'+w.txt+'</span><span class="dh-tot"><span class="inc">Thu '+fmt(inc)+'</span><span class="exp">Chi '+fmt(exp)+'</span></span></div>';
+}
+function groupByDay(rows){
+  const g={};
+  rows.forEach(function(t){(g[t.transaction_date]=g[t.transaction_date]||[]).push(t);});
+  return Object.keys(g).sort().reverse().map(function(d){return {date:d,rows:g[d].sort(function(a,b){return Number(b.id)-Number(a.id);})};});
+}
+function dayGroupHTML(g,withCopy){
+  let inc=0,exp=0;
+  g.rows.forEach(function(t){if(t.kind==="income")inc+=t.amount;else if(t.kind==="expense")exp+=t.amount;});
+  return dayHeadHTML(g.date,inc,exp)+g.rows.map(function(t){return todayRowHTML(t,withCopy);}).join("");
+}
+/* Giao dich 1 thang, cache theo thang de chuyen tab khong goi lai API.
+   refreshAfterTx xoa cache khi co thay doi. */
+async function fetchMonthTx(m){
+  if(state.todayTxCache[m])return state.todayTxCache[m];
+  const d=await api("/api/transactions?month="+encodeURIComponent(m));
+  state.todayTxCache[m]=d.transactions||[];
+  return state.todayTxCache[m];
 }
 function bindTodayRows(box,rows){
   // Bam dong: mo nut Sua/Xoa cua dong do, dong cac dong khac.
@@ -1811,25 +1877,153 @@ function bindTodayRows(box,rows){
   });
   bindTxRowBtns(box,rows);
 }
-/* Giao dich trong ngay hien tai (nut dau tien tren bottom nav) */
+/* Muc Hom nay: so nhat ky theo thang, 4 tab Hang ngay / Ngay / Thang / Note */
+function shiftMonthStr(m,delta){
+  const d=new Date(+m.slice(0,4),+m.slice(5)-1+delta,1);
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
+}
 async function loadToday(){
   refreshTodayIco();
-  const t=todayVN();
-  $("todayHead").innerHTML='<p class="muted">Đang tải…</p>';
-  $("todayList").innerHTML="";
+  state.todayMonth=state.todayMonth||monthVN();
+  $("todayMonthLabel").textContent="Tháng "+(+state.todayMonth.slice(5))+"/"+state.todayMonth.slice(0,4);
+  $("todayNext").disabled=state.todayMonth>=monthVN();
+  setTodayTab(state.todayTab||"daily");
+}
+function setTodayTab(tab){
+  state.todayTab=tab;
+  document.querySelectorAll("#todayTabs button").forEach(function(b){b.classList.toggle("active",b.dataset.tab===tab);});
+  show("todayPanelDaily",tab==="daily");
+  show("todayPanelCal",tab==="calendar");
+  show("todayPanelMonths",tab==="months");
+  show("todayPanelNotes",tab==="notes");
+  const showNav=tab==="daily"||tab==="calendar";
+  show("todayMonthNav",showNav);
+  show("todaySumCard",showNav);
+  if(tab==="daily")loadTodayDaily();
+  else if(tab==="calendar")loadTodayCal();
+  else if(tab==="months")loadTodayMonths();
+  else loadTodayNotes();
+}
+function renderTodayMonthSum(rows){
+  let inc=0,exp=0;
+  rows.forEach(function(t){if(t.kind==="income")inc+=t.amount;else if(t.kind==="expense")exp+=t.amount;});
+  $("todayMonthSum").innerHTML='<div class="kpi"><div class="lbl">Thu</div><div class="val inc">'+fmt(inc)+'</div></div><div class="kpi"><div class="lbl">Chi</div><div class="val exp">'+fmt(exp)+'</div></div><div class="kpi"><div class="lbl">Cộng</div><div class="val '+(inc-exp<0?"exp":"inc")+'">'+fmt(inc-exp)+'</div></div>';
+}
+/* Tab Hang ngay: toan bo giao dich cua thang, nhom theo ngay */
+async function loadTodayDaily(){
+  const m=state.todayMonth;
+  $("todayList").innerHTML='<p class="muted">Đang tải…</p>';
   try{
     await loadBase();
-    const d=await api("/api/transactions?month="+encodeURIComponent(t.slice(0,7)));
-    const rows=(d.transactions||[]).filter(function(x){return x.transaction_date===t;})
-      .sort(function(a,b){return Number(b.id)-Number(a.id);});
-    let inc=0,exp=0;
-    rows.forEach(function(x){if(x.kind==="income")inc+=x.amount;else if(x.kind==="expense")exp+=x.amount;});
-    const wd=new Date(+t.slice(0,4),+t.slice(5,7)-1,+t.slice(8)).getDay();
-    const wdCls=wd===0?" sun":wd===6?" sat":"";
-    $("todayHead").innerHTML='<div class="day-head"><span class="dh-num">'+(+t.slice(8))+'</span><span class="dh-wd'+wdCls+'">'+(wd===0?"CN":"Th "+(wd+1))+'</span><span class="dh-tot"><span class="inc">Thu '+fmt(inc)+'</span><span class="exp">Chi '+fmt(exp)+'</span></span></div>';
-    $("todayList").innerHTML=rows.length?rows.map(todayRowHTML).join(""):'<p class="muted">Chưa có giao dịch nào hôm nay.</p>';
+    const rows=await fetchMonthTx(m);
+    renderTodayMonthSum(rows);
+    const groups=groupByDay(rows);
+    $("todayList").innerHTML=groups.length?groups.map(function(g){return dayGroupHTML(g,false);}).join(""):'<p class="muted">Chưa có giao dịch trong tháng này.</p>';
     bindTodayRows($("todayList"),rows);
-  }catch(e){$("todayHead").innerHTML='<p class="muted">Không tải được danh sách.</p>';}
+  }catch(e){$("todayList").innerHTML='<p class="muted">Không tải được danh sách.</p>';}
+}
+/* Tab Ngay: lich thang, moi o hien so tien Thu/Chi cua ngay do; bam vao
+   ngay thi hien chi tiet giao dich cua ngay do o ben duoi. */
+async function loadTodayCal(){
+  const m=state.todayMonth;
+  $("todayCal").innerHTML='<p class="muted">Đang tải…</p>';
+  try{
+    await loadBase();
+    const rows=await fetchMonthTx(m);
+    renderTodayMonthSum(rows);
+    const byDay={};
+    rows.forEach(function(t){const d=byDay[t.transaction_date]||(byDay[t.transaction_date]={inc:0,exp:0});if(t.kind==="income")d.inc+=t.amount;else if(t.kind==="expense")d.exp+=t.amount;});
+    if(!state.todayCalSel||state.todayCalSel.slice(0,7)!==m)state.todayCalSel=(m===monthVN())?todayVN():null;
+    const y=+m.slice(0,4),mo=+m.slice(5)-1;
+    const startOff=(new Date(y,mo,1).getDay()+6)%7; // T2 = 0
+    const days=new Date(y,mo+1,0).getDate();
+    let h='<div class="cal">';
+    ["T2","T3","T4","T5","T6","T7","CN"].forEach(function(w){h+='<div class="cal-hd">'+w+'</div>';});
+    for(let i=0;i<startOff;i++)h+='<div class="cal-cell empty"></div>';
+    for(let d=1;d<=days;d++){
+      const iso=m+"-"+String(d).padStart(2,"0");
+      const dd=byDay[iso];
+      h+='<div class="cal-cell'+(iso===todayVN()?" today":"")+(iso===state.todayCalSel?" sel":"")+'" data-iso="'+iso+'"><div class="d">'+d+'</div>';
+      if(dd){if(dd.inc)h+='<div class="a inc">+'+fmtShort(dd.inc)+'</div>';if(dd.exp)h+='<div class="a exp">−'+fmtShort(dd.exp)+'</div>';}
+      h+='</div>';
+    }
+    h+='</div>';
+    $("todayCal").innerHTML=h;
+    $("todayCal").querySelectorAll(".cal-cell[data-iso]").forEach(function(c){
+      c.onclick=function(){state.todayCalSel=c.dataset.iso;loadTodayCal();};
+    });
+    renderTodayCalDetail(rows);
+  }catch(e){$("todayCal").innerHTML='<p class="muted">Không tải được lịch.</p>';}
+}
+function renderTodayCalDetail(rows){
+  const box=$("todayCalDetail");
+  const sel=state.todayCalSel;
+  if(!sel){box.innerHTML='<p class="muted">Bấm vào một ngày trên lịch để xem chi tiết.</p>';return;}
+  const dayRows=rows.filter(function(t){return t.transaction_date===sel;}).sort(function(a,b){return Number(b.id)-Number(a.id);});
+  if(!dayRows.length){box.innerHTML=dayHeadHTML(sel,0,0)+'<p class="muted">Ngày này chưa có giao dịch.</p>';return;}
+  box.innerHTML=dayGroupHTML({date:sel,rows:dayRows},false);
+  bindTodayRows(box,dayRows);
+}
+/* Tab Thang: tong Thu/Chi tung thang trong nam (qua /api/dashboard?year);
+   bam thang thi mo chi tiet tung ngay, bam ngay thi mo giao dich cua ngay. */
+async function loadTodayMonths(){
+  const y=state.todayYear||new Date().getFullYear();
+  state.todayYear=y;
+  $("todayYearLabel").textContent=y;
+  $("todayYearNext").disabled=y>=new Date().getFullYear();
+  $("todayMonths").innerHTML='<p class="muted">Đang tải…</p>';
+  try{
+    const d=await api("/api/dashboard?year="+y);
+    const flow=(d.flow||[]).slice().reverse();
+    if(!flow.length){$("todayMonths").innerHTML='<p class="muted">Năm này chưa có giao dịch.</p>';return;}
+    $("todayMonths").innerHTML=flow.map(function(f){
+      return '<div class="mrow click" data-month="'+f.month+'"><span class="mt">Tháng '+ (+f.month.slice(5)) +"/"+f.month.slice(0,4)+'</span><span class="ms"><span class="inc">Thu '+fmt(f.income)+'</span> • <span class="exp">Chi '+fmt(f.expense)+'</span></span><span class="muted">›</span></div><div class="mbody hidden" data-mbody="'+f.month+'"></div>';
+    }).join("");
+    $("todayMonths").querySelectorAll(".mrow").forEach(function(r){
+      r.onclick=function(){toggleMonthBody(r.dataset.month);};
+    });
+  }catch(e){$("todayMonths").innerHTML='<p class="muted">Không tải được danh sách tháng.</p>';}
+}
+async function toggleMonthBody(m){
+  const body=document.querySelector('[data-mbody="'+m+'"]');
+  const wasOpen=!body.classList.contains("hidden");
+  document.querySelectorAll("#todayMonths .mbody").forEach(function(b){b.classList.add("hidden");});
+  if(wasOpen)return;
+  body.classList.remove("hidden");
+  if(body.dataset.loaded)return;
+  body.innerHTML='<p class="muted">Đang tải…</p>';
+  try{
+    await loadBase();
+    const rows=await fetchMonthTx(m);
+    const groups=groupByDay(rows);
+    body.innerHTML=groups.length?groups.map(function(g){
+      let inc=0,exp=0;
+      g.rows.forEach(function(t){if(t.kind==="income")inc+=t.amount;else if(t.kind==="expense")exp+=t.amount;});
+      const w=wdInfo(g.date);
+      return '<div class="mday click" data-day="'+g.date+'"><span class="md">'+(+g.date.slice(8))+' '+w.txt+'</span><span class="ms"><span class="inc">Thu '+fmt(inc)+'</span> • <span class="exp">Chi '+fmt(exp)+'</span></span><span class="muted">›</span></div><div class="mday-txs hidden" data-dbody="'+g.date+'"></div>';
+    }).join(""):'<p class="muted">Tháng này chưa có giao dịch.</p>';
+    body.dataset.loaded="1";
+    body.querySelectorAll(".mday").forEach(function(dr){
+      dr.onclick=function(){toggleDayBody(dr.dataset.day,rows);};
+    });
+  }catch(e){body.innerHTML='<p class="muted">Không tải được.</p>';}
+}
+function toggleDayBody(iso,rows){
+  const body=document.querySelector('[data-dbody="'+iso+'"]');
+  const wasOpen=!body.classList.contains("hidden");
+  document.querySelectorAll("#todayMonths .mday-txs").forEach(function(b){b.classList.add("hidden");});
+  if(wasOpen)return;
+  body.classList.remove("hidden");
+  if(body.dataset.loaded)return;
+  const dayRows=rows.filter(function(t){return t.transaction_date===iso;}).sort(function(a,b){return Number(b.id)-Number(a.id);});
+  body.innerHTML=dayRows.map(function(t){return todayRowHTML(t,false);}).join("");
+  body.dataset.loaded="1";
+  bindTodayRows(body,dayRows);
+}
+/* Tab Note: danh sach ghi chu theo ngay (dung chung ham render voi muc Note) */
+function loadTodayNotes(){
+  $("todayNoteList").innerHTML=noteListHTML();
+  bindNoteList($("todayNoteList"));
 }
 /* ================= Note (luu tren thiet bi, chua dong bo tai khoan) ================= */
 const LS_NOTES="mymoney_notes";
@@ -1847,10 +2041,11 @@ function noteDayLabel(ts){
   if(iso===yday)return "Hôm qua";
   return iso.slice(8)+"/"+iso.slice(5,7)+"/"+iso.slice(0,4);
 }
-function renderNotes(){
+/* Danh sach ghi chu nhom theo ngay — dung chung cho muc Note va tab Note
+   o muc Hom nay (Sua thi chuyen sang muc Note de sua). */
+function noteListHTML(){
   const list=getNotes().slice().sort(function(a,b){return b.ts-a.ts;});
-  const box=$("noteList");if(!box)return;
-  if(!list.length){box.innerHTML='<p class="muted">Chưa có ghi chú nào.</p>';return;}
+  if(!list.length)return '<p class="muted">Chưa có ghi chú nào.</p>';
   let cur="",h="";
   list.forEach(function(n){
     const lbl=noteDayLabel(n.ts);
@@ -1858,7 +2053,9 @@ function renderNotes(){
     const tm=new Date(n.ts).toLocaleString("vi-VN",{timeZone:"Asia/Ho_Chi_Minh",hour:"2-digit",minute:"2-digit"});
     h+='<div class="list-item"><div class="mid"><div class="t note-text">'+esc(n.text)+'</div><div class="s">'+esc(tm)+'</div></div><div style="display:flex;flex-direction:column;gap:4px"><button class="btn small" data-note-edit="'+n.id+'">Sửa</button><button class="btn small danger" data-note-del="'+n.id+'">Xóa</button></div></div>';
   });
-  box.innerHTML=h;
+  return h;
+}
+function bindNoteList(box){
   box.querySelectorAll("button[data-note-edit]").forEach(function(b){
     b.onclick=function(){
       const n=getNotes().find(function(x){return String(x.id)===b.dataset.noteEdit;});
@@ -1867,8 +2064,8 @@ function renderNotes(){
       $("noteText").value=n.text;
       $("btnAddNote").textContent="Lưu thay đổi";
       show("btnCancelNote",true);
-      $("noteText").focus();
-      try{$("noteText").scrollIntoView({behavior:"smooth",block:"center"});}catch(e){}
+      go("notes");
+      try{$("noteText").focus();}catch(e){}
     };
   });
   box.querySelectorAll("button[data-note-del]").forEach(function(b){
@@ -1876,9 +2073,15 @@ function renderNotes(){
       if(!confirm("Xóa ghi chú này?"))return;
       saveNotes(getNotes().filter(function(n){return String(n.id)!==b.dataset.noteDel;}));
       if(editingNoteId!=null&&String(editingNoteId)===b.dataset.noteDel)cancelEditNote();
-      renderNotes();toast("Đã xóa ghi chú");
+      renderNotes();loadTodayNotes();
+      toast("Đã xóa ghi chú");
     };
   });
+}
+function renderNotes(){
+  const box=$("noteList");if(!box)return;
+  box.innerHTML=noteListHTML();
+  bindNoteList(box);
 }
 let editingNoteId=null;
 function cancelEditNote(){
@@ -2561,6 +2764,12 @@ function bindForms(){
   $("kpiInc").onclick=function(){setDashPieKind("income");};
   $("kpiExp").onclick=function(){setDashPieKind("expense");};
   $("btnAddTxToday").onclick=function(){openTxModal("expense");};
+  $("todayPrev").onclick=function(){state.todayMonth=shiftMonthStr(state.todayMonth||monthVN(),-1);loadToday();};
+  $("todayNext").onclick=function(){state.todayMonth=shiftMonthStr(state.todayMonth||monthVN(),1);loadToday();};
+  document.querySelectorAll("#todayTabs button").forEach(function(b){b.onclick=function(){setTodayTab(b.dataset.tab);};});
+  $("todayYearPrev").onclick=function(){state.todayYear=(state.todayYear||new Date().getFullYear())-1;loadTodayMonths();};
+  $("todayYearNext").onclick=function(){state.todayYear=(state.todayYear||new Date().getFullYear())+1;loadTodayMonths();};
+  $("btnGoNotes").onclick=function(){go("notes");};
   $("btnAddNote").onclick=function(){addNote();};
   $("btnCancelNote").onclick=function(){cancelEditNote();};
   $("dashNext").onclick=function(){shiftDashMonth(1);};
