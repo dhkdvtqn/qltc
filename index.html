@@ -43,11 +43,26 @@ h1{font-size:22px}h2{font-size:18px;margin:4px 0 12px}h3{font-size:16px}
 .calc-pad-grid button.op{background:var(--soft);color:var(--primary);font-weight:700}
 .calc-pad-grid button.eq{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:700}
 .calc-pad-grid button.fn{color:var(--muted)}
+/* Cam ung: form giao dich luon co dem duoi 360px de cuon duoc nut Luu len
+   tren ban phim may tinh. Dem CO DINH (khong bat/tat theo ban phim) vi
+   doi padding giua chung cu cham se lam noi dung nhay, click roi nham cho. */
+@media (pointer:coarse){#txModal .sheet{padding-bottom:360px}}
 .cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-height:228px;overflow-y:auto;padding:2px}
 .cat-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:10px 4px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);font-size:12px;text-align:center;cursor:pointer;min-height:64px}
 .cat-cell .ci{font-size:22px;line-height:1.2}
 .cat-cell .cn{width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cat-cell.sel{border-color:var(--primary);background:var(--soft);box-shadow:0 0 0 1px var(--primary)}
+.acc-btns{display:flex;gap:6px}
+@media (max-width:899px){#accList .list-item{flex-wrap:wrap}#accList .acc-btns{flex:1 1 100%;margin-top:6px}#accList .acc-btns .btn{flex:1}}
+/* Dien thoai: luoi danh muc chi text, khong icon (gon hon) */
+@media (max-width:899px){.cat-grid .ci{display:none}.cat-grid .cat-cell{min-height:46px;padding:12px 4px}}
+/* Lich chon ngay (modal rieng tren dien thoai) */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.cal-grid .wd{font-size:12px;color:var(--muted);font-weight:700;padding:6px 0}
+.cal-grid button{min-height:44px;border:0;border-radius:10px;background:none;font-size:15px;color:var(--text);padding:0}
+.cal-grid button.off{color:var(--muted);opacity:.5}
+.cal-grid button.today{border:1px solid var(--primary);color:var(--primary);font-weight:700}
+.cal-grid button.sel{background:var(--primary);color:#fff;font-weight:700}
 .btn:disabled{opacity:.55;cursor:not-allowed}
 input,select,textarea{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);font-size:16px}
 textarea{min-height:80px;resize:vertical}
@@ -304,7 +319,7 @@ html{touch-action:pan-x pan-y}
     <section id="view-transactions" class="view hidden">
       <h2>Giao dịch</h2>
       <div class="card">
-        <div class="row"><input id="txMonth" type="month"><select id="txCatFilter"><option value="">Tất cả danh mục</option></select><input id="txSearch" type="search" placeholder="Tìm nội dung, tag…"></div>
+        <div class="row" style="flex-direction:column;align-items:stretch"><input id="txMonth" type="month"><input id="txSearch" type="search" placeholder="Tìm nội dung, tag…"><select id="txCatFilter"><option value="">Tất cả danh mục</option></select></div>
         <div style="margin-top:10px"><button class="btn primary block" id="btnAddTxTop" type="button">＋ Thêm giao dịch</button></div>
       </div>
       <div class="card"><div id="txList"></div><p id="txSummary" class="muted" style="margin-top:10px"></p></div>
@@ -475,21 +490,31 @@ html{touch-action:pan-x pan-y}
       <button type="button" data-kind="income" id="kThu">Thu</button>
       <button type="button" data-kind="transfer" id="kChuyen">Chuyển tiền</button>
     </div>
-    <label>Số tiền (đồng)</label><input id="fAmount" inputmode="numeric" placeholder="VD: 1.000.000+100.000">
     <label>Ngày</label><input id="fDate" type="date">
-    <label id="fAccLabel">Ví</label><select id="fAccount"></select>
+    <label>Số tiền (đồng)</label><input id="fAmount" inputmode="numeric" placeholder="VD: 1.000.000+100.000">
     <div id="fToWrap" class="hidden"><label>Ví đích</label><select id="fToAccount"></select></div>
+    <label>Nội dung</label><div class="sugwrap"><input id="fNote" placeholder="VD: Ăn tối gia đình" autocomplete="off"><div class="suglist hidden" id="fNoteSug"></div></div>
     <div id="fCatWrap"><label>Danh mục</label><input type="hidden" id="fCategory"><div id="fCatGrid" class="cat-grid"></div>
       <div id="fCatActs" class="row hidden" style="margin-top:8px"><button class="btn small" id="btnEditFCat" type="button">Sửa danh mục</button><button class="btn small danger" id="btnDelFCat" type="button">Xóa danh mục</button></div>
+      <div style="margin-top:8px"><button class="btn small" id="btnAddFCat" type="button">＋ Thêm danh mục</button></div>
       <div id="fCatEdit" class="hidden" style="margin-top:8px"><input id="fCatEditName" placeholder="Tên danh mục"><div class="icongrid" id="fCatEditIcons" style="margin-top:8px"></div><input id="fCatEditIcon" type="hidden" value="🏷️"><div class="row" style="margin-top:8px"><button class="btn small primary" id="btnSaveFCat" type="button">Lưu</button><button class="btn small" id="btnCancelFCat" type="button">Hủy</button></div></div>
     </div>
-    <label>Nội dung</label><div class="sugwrap"><input id="fNote" placeholder="VD: Ăn tối gia đình" autocomplete="off"><div class="suglist hidden" id="fNoteSug"></div></div>
-    <label>Ghi chú / tag (cách nhau bằng dấu phẩy)</label><div class="sugwrap"><input id="fTags" placeholder="VD: gia đình, cần thiết" autocomplete="off"><div class="suglist hidden" id="fTagsSug"></div></div>
     <div class="row" style="margin-top:16px">
-      <button class="btn primary" id="btnSaveTx" type="button">Lưu giao dịch</button>
+      <button class="btn primary" id="btnSaveTx" type="button">Lưu</button>
       <button class="btn" id="btnCloseTx" type="button">Đóng</button>
     </div>
     <p id="txFormMsg" class="muted" style="margin-top:8px"></p>
+    <button class="btn small hidden" id="btnGoPickAcc" type="button" style="margin-top:4px">Chọn ví mặc định ở mục Ví →</button>
+  </div>
+</div>
+
+<!-- ===== CHON NGAY (dien thoai: cham ngay la chon luon, khong can bam OK) ===== -->
+<div id="dateModal" class="modal hidden" style="z-index:75">
+  <div class="sheet">
+    <h2>Chọn ngày</h2>
+    <div class="monthnav"><button type="button" id="datePrev">‹</button><span class="mlbl" id="dateCalLabel"></span><button type="button" id="dateNext">›</button></div>
+    <div id="dateCal"></div>
+    <div class="row" style="margin-top:12px"><button class="btn" id="btnDateToday" type="button">Hôm nay</button><button class="btn" id="btnDateClose" type="button">Đóng</button></div>
   </div>
 </div>
 
@@ -528,6 +553,7 @@ html{touch-action:pan-x pan-y}
 "use strict";
 /* ================= Cấu hình & tiện ích ================= */
 const LS_TOKEN="mymoney_token", LS_USER="mymoney_user";
+const LS_DEF_ACC="mymoney_default_account";
 // "Luu dang nhap" = luu token vao localStorage (ton tai 30 ngay, mo lai van
 // vao thang). Khong tick = chi luu vao sessionStorage (tat trinh duyet/tab
 // la mat, lan sau phai dang nhap lai). Mat khau khong bao gio duoc luu.
@@ -739,7 +765,7 @@ function logout(silent){
 }
 
 /* ================= State ================= */
-const state={user:null,accounts:[],categories:[],tx:[],budgets:[],recurrings:[],goals:[],view:"dashboard",txKind:"expense",editingId:null,editingRecId:null,editingAccId:null,impRows:[],impHeaders:[],dashMonth:null};
+const state={user:null,accounts:[],categories:[],tx:[],budgets:[],recurrings:[],goals:[],view:"transactions",txKind:"expense",editingId:null,editingRecId:null,editingAccId:null,impRows:[],impHeaders:[],dashMonth:null,editingTags:"",editingTxAccount:null,catDetailCtx:null,fCatAdding:false};
 const NAV=[
   ["dashboard","🏠","Tổng quan"],["transactions","↕️","Giao dịch"],["accounts","💰","Ví"],
   ["categories","🏷️","Danh mục"],["budgets","🎯","Ngân sách"],["recurring","🔁","Định kỳ"],
@@ -796,7 +822,7 @@ function go(view){
 }
 function showApp(on){
   show("authView",!on);show("appView",on);
-  if(on){buildNav();$("whoBox").textContent=(state.user?state.user.email:"")+(state.user&&state.user.role==="admin"?" • Admin":"");go("dashboard");}
+  if(on){buildNav();$("whoBox").textContent=(state.user?state.user.email:"")+(state.user&&state.user.role==="admin"?" • Admin":"");go("transactions");}
   else{showAuth();}
 }
 function showAuth(){
@@ -891,9 +917,37 @@ async function loadBase(){
   const c=await api("/api/categories");state.categories=c.categories||[];
   fillAccountSelects();
 }
+// ---- Vi mac dinh (form giao dich khong hien muc Vi nua) ----
+// 1 vi: tu la mac dinh. Nhieu vi: dung vi da chon o muc Vi; chua chon
+// thi tra null de form yeu cau chon truoc khi luu. Luu o localStorage
+// (theo thiet bi) — khong can doi worker.
+function getDefaultAccountId(){
+  const list=state.accounts||[];
+  if(!list.length)return null;
+  if(list.length===1)return list[0].id;
+  let saved=null;try{saved=localStorage.getItem(LS_DEF_ACC);}catch(e){}
+  if(saved&&list.some(function(a){return String(a.id)===String(saved);}))return +saved;
+  return null;
+}
+function setDefaultAccountId(id){try{localStorage.setItem(LS_DEF_ACC,String(id));}catch(e){}}
+function clearDefaultAccountId(id){
+  try{if(String(localStorage.getItem(LS_DEF_ACC)||"")===String(id))localStorage.removeItem(LS_DEF_ACC);}catch(e){}
+}
+// Sau moi lan them/sua/xoa giao dich: nap lai TAT CA cac man hinh co tong
+// so (giao dich, Tong quan, Thong ke) + modal chi tiet danh muc neu dang mo.
+// Truoc day chi nap lai giao dich + Tong quan nen tong o Thong ke bi cu.
+function refreshAfterTx(){
+  loadTx();loadDashboard();loadStats();
+  if(state.catDetailCtx&&!$("catDetailModal").classList.contains("hidden"))reloadCatDetail();
+}
+function reloadCatDetail(){
+  if(!state.catDetailCtx)return;
+  if(state.catDetailCtx.src==="stat")openStatCatDetail(state.catDetailCtx.name);
+  else openCatDetail(state.catDetailCtx.name);
+}
 function fillAccountSelects(){
   const opts=state.accounts.map(function(a){return '<option value="'+a.id+'">'+esc(a.icon||"")+" "+esc(a.name)+"</option>";}).join("");
-  ["fAccount","fToAccount","recAccount","impAccount"].forEach(function(id){const el=$(id);if(el)el.innerHTML=opts;});
+  ["fToAccount","recAccount","impAccount"].forEach(function(id){const el=$(id);if(el)el.innerHTML=opts;});
   const txCat=$("txCatFilter");if(txCat){txCat.innerHTML='<option value="">Tất cả danh mục</option>'+state.categories.map(function(c){return '<option value="'+c.id+'">'+esc(c.name)+"</option>";}).join("");}
   const budCat=$("budCat");if(budCat){budCat.innerHTML='<option value="">Chọn danh mục chi…</option>'+state.categories.filter(function(c){return c.kind==="expense";}).map(function(c){return '<option value="'+c.id+'">'+esc(c.name)+"</option>";}).join("");}
   const recCat=$("recCat");if(recCat){recCat.innerHTML=state.categories.map(function(c){return '<option value="'+c.id+'">'+esc(c.name)+"</option>";}).join("");}
@@ -909,8 +963,9 @@ function fCatList(kind){
 function renderFCatGrid(){
   const list=fCatList(state.txKind);
   const cur=$("fCategory").value;
-  let html='<button type="button" class="cat-cell'+(!cur?" sel":"")+'" data-cat=""><span class="ci">🚫</span><span class="cn">Không chọn</span></button>';
-  html+=list.map(function(c){
+  // Khong con o "Khong chon" — bat buoc chon 1 danh muc.
+  if(!list.length){$("fCatGrid").innerHTML='<p class="muted" style="grid-column:1/-1">Chưa có danh mục '+(state.txKind==="income"?"thu":"chi")+' — bấm ＋ Thêm danh mục bên dưới.</p>';updateFCatActs();return;}
+  let html=list.map(function(c){
     const sel=String(c.id)===String(cur)?" sel":"";
     return '<button type="button" class="cat-cell'+sel+'" data-cat="'+c.id+'"><span class="ci">'+esc(c.icon||"🏷️")+'</span><span class="cn">'+esc(c.name)+'</span></button>';
   }).join("");
@@ -921,10 +976,11 @@ function renderFCatGrid(){
   updateFCatActs();
 }
 function setFCat(id){
-  // Chi nhan id con ton tai (danh muc da xoa thi ve "Khong chon", tranh gui
-  // category_id khong ton tai xuong may chu).
+  // Chi nhan id con ton tai (danh muc da xoa thi ve muc dau tien, tranh gui
+  // category_id khong ton tai xuong may chu; danh muc la bat buoc).
   const ok=id&&state.categories.some(function(c){return String(c.id)===String(id);});
-  const val=ok?String(id):"";
+  let val=ok?String(id):"";
+  if(!val){const list=fCatList(state.txKind);if(list.length)val=String(list[0].id);}
   $("fCategory").value=val;
   $("fCatGrid").querySelectorAll("button[data-cat]").forEach(function(b){
     b.classList.toggle("sel",String(b.dataset.cat)===val);
@@ -1077,6 +1133,7 @@ async function loadDashboard(){
 }
 /* Chi tiet cac khoan chi cua 1 danh muc trong thang dang xem o Tong quan */
 async function openCatDetail(name){
+  state.catDetailCtx={src:"dash",name:name};
   const m=state.dashMonth||monthVN();
   const lbl=dashMonthLabel(m);
   $("catDetailTitle").textContent="🍰 "+(name||"Chưa phân loại");
@@ -1090,7 +1147,7 @@ async function openCatDetail(name){
     });
     const tot=rows.reduce(function(s,t){return s+Number(t.amount||0);},0);
     $("catDetailTotal").textContent=lbl+" • "+rows.length+" khoản • Tổng "+fmt(tot);
-    $("catDetailHint").textContent="Bấm vào một khoản chi để sửa.";
+    $("catDetailHint").textContent="Bấm vào một khoản để sửa, hoặc dùng nút Sửa/Xóa.";
     renderCatDetailList(rows,name,"Không có khoản chi nào trong "+lbl.toLowerCase()+".");
   }catch(e){$("catDetailTotal").textContent="Không tải được danh sách.";}
 }
@@ -1099,7 +1156,18 @@ async function openCatDetail(name){
 function renderCatDetailList(rows,name,emptyMsg){
   $("catDetailList").innerHTML=rows.length?rows.map(function(t){
     const inc=t.kind==="income";
-    return '<div class="list-item click" data-txid="'+t.id+'"><div class="mid"><div class="t">'+esc(t.note||name||"Khoản chi")+'</div><div class="s">'+esc(t.transaction_date)+" • "+esc(t.account_name||accName(t.account_id))+(t.tags?" • "+esc(t.tags):"")+'</div></div><div class="amt '+(inc?"inc":"exp")+'">'+(inc?"+ ":"− ")+fmt(t.amount)+'</div><span style="color:var(--muted)">›</span></div>';}).join(""):'<p class="muted">'+esc(emptyMsg)+'</p>';
+    return '<div class="list-item click" data-txid="'+t.id+'"><div class="mid"><div class="t">'+esc(t.note||name||"Khoản chi")+'</div><div class="s">'+esc(t.transaction_date)+" • "+esc(t.account_name||accName(t.account_id))+(t.tags?" • "+esc(t.tags):"")+'</div></div><div class="amt '+(inc?"inc":"exp")+'">'+(inc?"+ ":"− ")+fmt(t.amount)+'</div><div style="display:flex;flex-direction:column;gap:4px"><button class="btn small" data-det="edit" data-id="'+t.id+'">Sửa</button><button class="btn small danger" data-det="del" data-id="'+t.id+'">Xóa</button></div></div>';}).join(""):'<p class="muted">'+esc(emptyMsg)+'</p>';
+  $("catDetailList").querySelectorAll("button[data-det]").forEach(function(b){
+    b.onclick=async function(e){
+      e.stopPropagation();
+      const tx=rows.find(function(x){return String(x.id)===b.dataset.id;});
+      if(!tx)return;
+      if(b.dataset.det==="edit"){show("catDetailModal",false);openTxModal(tx.kind,tx);return;}
+      if(!confirm("Xóa giao dịch này?"))return;
+      try{await api("/api/transactions/"+tx.id,{method:"DELETE"});toast("Đã xóa giao dịch");reloadCatDetail();loadTx();loadDashboard();loadStats();}
+      catch(err){toast(err.message);}
+    };
+  });
   $("catDetailList").querySelectorAll(".list-item.click").forEach(function(el){
     el.onclick=function(){
       const id=el.getAttribute("data-txid");
@@ -1122,6 +1190,7 @@ function monthsBetween(from,to){
 }
 /* Lich su thu/chi cua 1 danh muc trong ky dang xem o Thong ke */
 async function openStatCatDetail(name){
+  state.catDetailCtx={src:"stat",name:name};
   const kind=statState.kind||"expense";
   const r=statRange();
   const lbl=r?r.label:"Toàn bộ thời gian";
@@ -1148,7 +1217,7 @@ async function openStatCatDetail(name){
     rows.sort(function(a,b){return a.transaction_date<b.transaction_date?1:a.transaction_date>b.transaction_date?-1:0;});
     const tot=rows.reduce(function(s,t){return s+Number(t.amount||0);},0);
     $("catDetailTotal").textContent=lbl+" • "+rows.length+" khoản • Tổng "+fmt(tot)+(capped?" (chỉ hiện 500 giao dịch gần nhất)":"");
-    $("catDetailHint").textContent=kind==="income"?"Bấm vào một khoản thu để sửa.":"Bấm vào một khoản chi để sửa.";
+    $("catDetailHint").textContent="Bấm vào một khoản để sửa, hoặc dùng nút Sửa/Xóa.";
     renderCatDetailList(rows,name,"Không có khoản "+(kind==="income"?"thu":"chi")+" nào trong kỳ này.");
   }catch(e){$("catDetailTotal").textContent="Không tải được danh sách.";}
 }
@@ -1381,30 +1450,105 @@ function assignPieColors(rows){
 
 
 /* ================= Giao dịch ================= */
+// ---- Lich chon ngay (chi tren dien thoai: cham ngay la chon luon) ----
+let datePickYM=null; // {y,m} thang dang hien (m 0-11)
+function isoFromParts(y,m,d){const dt=new Date(y,m,d);return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0");}
+function openDatePicker(){
+  if(calcPadTarget){try{calcPadTarget.blur();}catch(e){}hideCalcPad();}
+  const cur=$("fDate").value||todayVN();
+  const p=cur.split("-");
+  datePickYM={y:+p[0],m:+p[1]-1};
+  renderDateCal();
+  show("dateModal",true);
+}
+function renderDateCal(){
+  const y=datePickYM.y,m=datePickYM.m;
+  $("dateCalLabel").textContent="Tháng "+(m+1)+"/"+y;
+  const sel=$("fDate").value,today=todayVN();
+  const lead=(new Date(y,m,1).getDay()+6)%7; // tuan bat dau thu 2
+  const dim=new Date(y,m+1,0).getDate();
+  const prevDim=new Date(y,m,0).getDate();
+  const cells=[];
+  for(let i=lead-1;i>=0;i--)cells.push({d:prevDim-i,off:-1});
+  for(let d=1;d<=dim;d++)cells.push({d:d,off:0});
+  while(cells.length%7!==0)cells.push({d:cells.length-lead-dim+1,off:1});
+  let h='<div class="cal-grid"><span class="wd">T2</span><span class="wd">T3</span><span class="wd">T4</span><span class="wd">T5</span><span class="wd">T6</span><span class="wd">T7</span><span class="wd">CN</span>';
+  cells.forEach(function(c){
+    const iso=isoFromParts(y,m+c.off,c.d);
+    let cls=c.off?"off":"";
+    if(iso===today)cls+=" today";
+    if(iso===sel)cls+=" sel";
+    h+='<button type="button" data-iso="'+iso+'" class="'+cls.trim()+'">'+c.d+'</button>';
+  });
+  h+='</div>';
+  $("dateCal").innerHTML=h;
+  $("dateCal").querySelectorAll("button[data-iso]").forEach(function(b){
+    b.onclick=function(){$("fDate").value=b.dataset.iso;show("dateModal",false);};
+  });
+}
+function shiftDateCal(dm){
+  const dt=new Date(datePickYM.y,datePickYM.m+dm,1);
+  datePickYM={y:dt.getFullYear(),m:dt.getMonth()};
+  renderDateCal();
+}
 async function openTxModal(kind,tx){
   state.txKind=kind||"expense";state.editingId=tx?tx.id:null;
+  state.editingTags=tx?tx.tags||"":""; // tag cu giu nguyen khi sua (form khong con o tag)
+  state.editingTxAccount=tx?tx.account_id:null; // sua thi giu nguyen vi cu
   $("txModalTitle").textContent=tx?"Sửa giao dịch":"Thêm giao dịch";
-  $("txFormMsg").textContent="";
+  $("txFormMsg").textContent="";show("btnGoPickAcc",false);
   if(!state.accounts.length){try{await loadBase();}catch(e){}}
   fillAccountSelects();
   if(!tx)$("fCategory").value=""; // giao dich moi: chon muc dau tien, khong ke thua lan mo truoc
   setKindUI(state.txKind);
   $("fAmount").value=tx?tx.amount:"";formatMoneyField($("fAmount"));
   $("fDate").value=tx?tx.transaction_date:todayVN();
-  $("fAccount").value=tx?tx.account_id:(state.accounts[0]?state.accounts[0].id:"");
-  $("fToAccount").value=tx?(tx.transfer_to_account_id||""):(state.accounts[1]?state.accounts[1].id:"");
-  $("fNote").value=tx?tx.note||"":"";$("fTags").value=tx?tx.tags||"":"";
+  // Vi dich (chuyen tien): mac dinh la vi dau tien khac vi nguon.
+  const src=tx?tx.account_id:getDefaultAccountId();
+  const dest=state.accounts.find(function(a){return String(a.id)!==String(src);});
+  $("fToAccount").value=tx?(tx.transfer_to_account_id||(dest?dest.id:"")):(dest?dest.id:"");
+  $("fNote").value=tx?tx.note||"":"";
   // Nap dung danh muc cua giao dich khi sua (truoc day form sua de danh muc
   // mac dinh o muc dau tien, luu lai la doi nham danh muc).
   if(tx&&tx.category_id)setFCat(tx.category_id);
-  // Chua co vi thi bao ngay + khoa nut Luu (gui account_id=0 se bi loi khoa ngoai).
+  // Chua co vi, hoac nhieu vi ma chua chon vi mac dinh thi bao ngay + khoa
+  // nut Luu (gui account_id=0 se bi loi khoa ngoai).
   const noAcc=!state.accounts.length;
-  $("btnSaveTx").disabled=noAcc;
+  const noDef=!tx&&!noAcc&&getDefaultAccountId()==null;
+  $("btnSaveTx").disabled=noAcc||noDef;
   if(noAcc)$("txFormMsg").textContent="Bạn chưa có ví nào — hãy tạo ví ở mục Ví trước, rồi quay lại thêm giao dịch.";
-  ["fNoteSug","fTagsSug"].forEach(function(id){const el=$(id);if(el)el.classList.add("hidden");});
+  else if(noDef){$("txFormMsg").textContent="Bạn có nhiều ví — hãy chọn ví mặc định ở mục Ví trước.";show("btnGoPickAcc",true);}
+  const ns=$("fNoteSug");if(ns)ns.classList.add("hidden");
   // Nap san giao dich thang nay de co du lieu goi y (neu chua co).
   if(!state.tx.length){api("/api/transactions?month="+encodeURIComponent(monthVN())).then(function(d){state.tx=d.transactions||[];}).catch(function(){});}
   show("txModal",true);
+  // Giao dich moi: dat con nhay vao o So tien + hien ban phim so ngay
+  // (dien thoai: ban phim may tinh cua app tu hien khi o tien co focus).
+  if(!tx)setTimeout(function(){const el=$("fAmount");if(el)el.focus();},60);
+}
+// Luu form giao dich (tach rieng de nut Luu va nut ✓ tren ban phim so
+// dung chung). Vi nguon = vi cua giao dich khi sua, vi mac dinh khi them.
+async function saveTxForm(){
+  if(!state.accounts.length){$("txFormMsg").textContent="Bạn chưa có ví nào — hãy tạo ví ở mục Ví trước, rồi quay lại thêm giao dịch.";return false;}
+  const amt=moneyValue($("fAmount"));
+  if(!amt||amt<=0){$("txFormMsg").textContent="Nhập số tiền hợp lệ (số nguyên đồng, > 0).";return false;}
+  const date=$("fDate").value;if(!date){$("txFormMsg").textContent="Chọn ngày giao dịch.";return false;}
+  const srcAcc=state.editingId?state.editingTxAccount:getDefaultAccountId();
+  if(!srcAcc){$("txFormMsg").textContent="Bạn có nhiều ví — hãy chọn ví mặc định ở mục Ví trước.";show("btnGoPickAcc",true);$("btnSaveTx").disabled=true;return false;}
+  try{
+    if(state.txKind==="transfer"){
+      if(!$("fToAccount").value||String($("fToAccount").value)===String(srcAcc)){$("txFormMsg").textContent="Chọn ví đích khác ví nguồn.";return false;}
+      await api("/api/transactions",{method:"POST",body:{kind:"transfer",account_id:+srcAcc,transfer_to_account_id:+$("fToAccount").value,amount:amt,transaction_date:date,note:$("fNote").value.trim()}});
+    }else{
+      if(!$("fCategory").value){$("txFormMsg").textContent="Chọn một danh mục (hoặc bấm ＋ Thêm danh mục).";return false;}
+      const body={kind:state.txKind,account_id:+srcAcc,category_id:+$("fCategory").value,amount:amt,transaction_date:date,note:$("fNote").value.trim()};
+      if(state.editingId)await api("/api/transactions/"+state.editingId,{method:"PUT",body:body});
+      else await api("/api/transactions",{method:"POST",body:body});
+    }
+    recordHist($("fNote").value,state.editingTags||"");
+    show("txModal",false);toast("Đã lưu giao dịch");refreshAfterTx();
+    return true;
+  }catch(e){$("txFormMsg").textContent=e.message;return false;}
 }
 
 /* ================= Goi y lich su noi dung / tag ================= */
@@ -1469,7 +1613,7 @@ function setKindUI(kind){
   state.txKind=kind;
   $("kChi").className=kind==="expense"?"on-chi":"";$("kThu").className=kind==="income"?"on-thu":"";$("kChuyen").className=kind==="transfer"?"on-chuyen":"";
   show("fToWrap",kind==="transfer");show("fCatWrap",kind!=="transfer");
-  $("fAccLabel").textContent=kind==="transfer"?"Ví nguồn":"Ví";
+  if(kind==="transfer"&&state.accounts.length<2)$("txFormMsg").textContent="Cần ít nhất 2 ví để chuyển tiền.";
   if(kind!=="transfer"){
     // Doi loai Thu/Chi: giu lua chon cu neu van thuoc loai moi, khong thi
     // chon muc dau tien (dung nhu select cu tu chon option dau).
@@ -1499,9 +1643,9 @@ async function loadTx(){
     $("txList").querySelectorAll("button[data-act]").forEach(function(b){
       b.onclick=async function(){
         const t=state.tx.find(function(x){return String(x.id)===b.dataset.id;});if(!t)return;
-        if(b.dataset.act==="del"){if(!confirm("Xóa giao dịch này?"))return;try{await api("/api/transactions/"+t.id,{method:"DELETE"});toast("Đã xóa");loadTx();}catch(e){toast(e.message);}}
+        if(b.dataset.act==="del"){if(!confirm("Xóa giao dịch này?"))return;try{await api("/api/transactions/"+t.id,{method:"DELETE"});toast("Đã xóa");refreshAfterTx();}catch(e){toast(e.message);}}
         if(b.dataset.act==="edit"){openTxModal(t.kind,t);}
-        if(b.dataset.act==="copy"){openTxModal(t.kind);$("fAmount").value=t.amount;formatMoneyField($("fAmount"));$("fDate").value=t.transaction_date;$("fNote").value=t.note||"";$("fTags").value=t.tags||"";$("fAccount").value=t.account_id;if(t.category_id)setFCat(t.category_id);}
+        if(b.dataset.act==="copy"){openTxModal(t.kind);$("fAmount").value=t.amount;formatMoneyField($("fAmount"));$("fDate").value=t.transaction_date;$("fNote").value=t.note||"";if(t.category_id)setFCat(t.category_id);}
       };
     });
   }catch(e){toast(e.message);}
@@ -1510,10 +1654,14 @@ async function loadTx(){
 /* ================= Ví ================= */
 async function loadAccounts(){
   try{await loadBase();
-    $("accList").innerHTML=state.accounts.length?state.accounts.map(function(a){
-      return '<div class="list-item"><span class="ic">'+esc(a.icon||"💵")+'</span><div class="mid"><div class="t">'+esc(a.name)+'</div><div class="s">'+esc(a.type)+" • Số dư đầu kỳ "+fmt(a.opening_balance)+(a.is_active?"":" • Đã ẩn")+'</div></div><div class="amt">'+fmt(a.balance)+'</div><button class="btn small" data-acc-edit="'+a.id+'">Sửa</button><button class="btn small danger" data-id="'+a.id+'">Xóa</button></div>';}).join(""):'<p class="muted">Chưa có ví nào.</p>';
+    const defId=getDefaultAccountId();
+    const hint=(state.accounts.length>1&&defId==null)?'<p class="muted" style="margin-bottom:8px">Bạn có nhiều ví — bấm ★ để chọn ví mặc định dùng khi nhập giao dịch.</p>':"";
+    $("accList").innerHTML=hint+(state.accounts.length?state.accounts.map(function(a){
+      const isDef=defId!=null&&String(a.id)===String(defId);
+      return '<div class="list-item"><span class="ic">'+esc(a.icon||"💵")+'</span><div class="mid"><div class="t">'+esc(a.name)+'</div><div class="s">'+(isDef?'<span class="pill ok">Mặc định</span> ':"")+esc(a.type)+" • Số dư đầu kỳ "+fmt(a.opening_balance)+(a.is_active?"":" • Đã ẩn")+'</div></div><div class="amt">'+fmt(a.balance)+'</div><div class="acc-btns">'+(state.accounts.length>1&&!isDef?'<button class="btn small" data-acc-def="'+a.id+'">★ Mặc định</button>':"")+'<button class="btn small" data-acc-edit="'+a.id+'">Sửa</button><button class="btn small danger" data-id="'+a.id+'">Xóa</button></div></div>';}).join(""):'<p class="muted">Chưa có ví nào.</p>');
+    $("accList").querySelectorAll("button[data-acc-def]").forEach(function(b){b.onclick=function(){setDefaultAccountId(+b.dataset.accDef);toast("Đã đặt ví mặc định");loadAccounts();};});
     $("accList").querySelectorAll("button[data-acc-edit]").forEach(function(b){b.onclick=function(){startEditAcc(+b.dataset.accEdit);};});
-    $("accList").querySelectorAll("button[data-id]").forEach(function(b){b.onclick=async function(){if(!confirm("Xóa ví này? Ví đã có giao dịch sẽ không xóa được."))return;try{await api("/api/accounts/"+b.dataset.id,{method:"DELETE"});if(state.editingAccId===+b.dataset.id)cancelEditAcc();toast("Đã xóa ví");loadAccounts();}catch(e){toast(e.message);}};});
+    $("accList").querySelectorAll("button[data-id]").forEach(function(b){b.onclick=async function(){if(!confirm("Xóa ví này? Ví đã có giao dịch sẽ không xóa được."))return;try{await api("/api/accounts/"+b.dataset.id,{method:"DELETE"});clearDefaultAccountId(+b.dataset.id);if(state.editingAccId===+b.dataset.id)cancelEditAcc();toast("Đã xóa ví");loadAccounts();}catch(e){toast(e.message);}};});
   }catch(e){toast(e.message);}
 }
 function startEditAcc(id){
@@ -1958,7 +2106,6 @@ function bindForms(){
   $("txModal").addEventListener("click",function(e){if(e.target===$("txModal"))show("txModal",false);});
   $("catDetailModal").addEventListener("click",function(e){if(e.target===$("catDetailModal"))show("catDetailModal",false);});
   bindSuggest("fNote","fNoteSug","notes");
-  bindSuggest("fTags","fTagsSug","tags");
   // May tinh + phan cach nghin cho cac o nhap tien
   ["fAmount","recAmount","accOpen","budLimit","goalTarget"].forEach(function(id){attachMoneyInput($(id));});
   // Ban phim may tinh: pointerdown + preventDefault de o nhap khong bi
@@ -1969,11 +2116,26 @@ function bindForms(){
     e.preventDefault();
     const el=calcPadTarget;if(!el)return;
     const key=b.dataset.key;
-    if(key==="✓"){hideCalcPad();el.blur();return;} // blur se tu tinh bieu thuc con do
+    if(key==="✓"){
+      hideCalcPad();el.blur(); // blur se tu tinh bieu thuc con do
+      // O So tien cua form giao dich: bam ✓ la luu luon giao dich.
+      if(el===$("fAmount")&&!$("txModal").classList.contains("hidden"))saveTxForm();
+      return;
+    }
     calcPadApply(el,key);
     el.focus();
   });
   $("btnRecentAll").onclick=function(){go("transactions");};
+  $("btnGoPickAcc").onclick=function(){show("txModal",false);go("accounts");};
+  // Dien thoai: cham o Ngay thi mo lich rieng (cham ngay la chon luon,
+  // khong can bam OK nhu bo chon ngay cua he thong). May tinh giu nguyen
+  // o date goc cua trinh duyet.
+  if(IS_TOUCH){const fd=$("fDate");if(fd){fd.readOnly=true;fd.addEventListener("click",function(){openDatePicker();});}}
+  $("datePrev").onclick=function(){shiftDateCal(-1);};
+  $("dateNext").onclick=function(){shiftDateCal(1);};
+  $("btnDateToday").onclick=function(){$("fDate").value=todayVN();show("dateModal",false);};
+  $("btnDateClose").onclick=function(){show("dateModal",false);};
+  $("dateModal").addEventListener("click",function(e){if(e.target===$("dateModal"))show("dateModal",false);});
   // Sua/Xoa nhanh danh muc dang chon trong form giao dich
   $("btnDelFCat").onclick=async function(){
     const id=$("fCategory").value;if(!id)return;
@@ -1981,24 +2143,41 @@ function bindForms(){
     if(!confirm("Xóa danh mục \""+(c?c.name:"")+"\"? Giao dịch cũ sẽ mất danh mục."))return;
     try{await api("/api/categories/"+id,{method:"DELETE"});toast("Đã xóa danh mục");
       $("fCategory").value="";
-      await loadBase();renderFCatGrid();
+      await loadBase();
+      const list=fCatList(state.txKind);if(list.length)$("fCategory").value=String(list[0].id);
+      renderFCatGrid();
     }catch(e){toast(e.message);}
   };
+  $("btnAddFCat").onclick=function(){
+    state.fCatAdding=true;
+    $("fCatEditName").value="";setFCatEditIcon("🏷️");
+    show("fCatEdit",true);$("fCatEditName").focus();
+  };
   $("btnEditFCat").onclick=function(){
+    state.fCatAdding=false;
     const id=$("fCategory").value;if(!id)return;
     const c=state.categories.find(function(x){return String(x.id)===String(id);});if(!c)return;
     $("fCatEditName").value=c.name;
     setFCatEditIcon(c.icon||"🏷️");
     show("fCatEdit",true);
   };
-  $("btnCancelFCat").onclick=function(){show("fCatEdit",false);};
+  $("btnCancelFCat").onclick=function(){state.fCatAdding=false;show("fCatEdit",false);};
   $("btnSaveFCat").onclick=async function(){
-    const id=$("fCategory").value;if(!id)return;
     const name=$("fCatEditName").value.trim();
     if(!name)return toast("Nhập tên danh mục");
-    const c=state.categories.find(function(x){return String(x.id)===String(id);});
+    const icon=$("fCatEditIcon").value.trim()||"🏷️";
     try{
-      await api("/api/categories/"+id,{method:"PUT",body:{name:name,parent_id:c?c.parent_id:null,color:c?c.color:"#64748B",icon:$("fCatEditIcon").value.trim()||"🏷️"}});
+      if(state.fCatAdding){
+        const d=await api("/api/categories",{method:"POST",body:{name:name,kind:state.txKind,parent_id:null,color:pickRandomCatColor(),icon:icon}});
+        toast("Đã thêm danh mục");show("fCatEdit",false);state.fCatAdding=false;
+        await loadBase();
+        if(d&&d.id)$("fCategory").value=String(d.id);
+        renderFCatGrid();if(d&&d.id)setFCat(d.id);
+        return;
+      }
+      const id=$("fCategory").value;if(!id)return;
+      const c=state.categories.find(function(x){return String(x.id)===String(id);});
+      await api("/api/categories/"+id,{method:"PUT",body:{name:name,parent_id:c?c.parent_id:null,color:c?c.color:"#64748B",icon:icon}});
       toast("Đã lưu thay đổi");show("fCatEdit",false);
       await loadBase();renderFCatGrid();
     }catch(e){toast(e.message);}
@@ -2009,24 +2188,7 @@ function bindForms(){
     g.innerHTML=CAT_ICONS.map(function(ic){return '<button type="button" data-icon="'+ic+'">'+ic+'</button>';}).join("");
     g.querySelectorAll("button").forEach(function(b){b.onclick=function(){setFCatEditIcon(b.dataset.icon);};});
   })();
-  $("btnSaveTx").onclick=async function(){
-    if(!state.accounts.length){$("txFormMsg").textContent="Bạn chưa có ví nào — hãy tạo ví ở mục Ví trước, rồi quay lại thêm giao dịch.";return;}
-    const amt=moneyValue($("fAmount"));
-    if(!amt||amt<=0){$("txFormMsg").textContent="Nhập số tiền hợp lệ (số nguyên đồng, > 0).";return;}
-    const date=$("fDate").value;if(!date){$("txFormMsg").textContent="Chọn ngày giao dịch.";return;}
-    try{
-      if(state.txKind==="transfer"){
-        if(!$("fToAccount").value||$("fToAccount").value===$("fAccount").value){$("txFormMsg").textContent="Chọn ví đích khác ví nguồn.";return;}
-        await api("/api/transactions",{method:"POST",body:{kind:"transfer",account_id:+$("fAccount").value,transfer_to_account_id:+$("fToAccount").value,amount:amt,transaction_date:date,note:$("fNote").value.trim()}});
-      }else{
-        const body={kind:state.txKind,account_id:+$("fAccount").value,category_id:$("fCategory").value?+$("fCategory").value:null,amount:amt,transaction_date:date,note:$("fNote").value.trim(),tags:$("fTags").value.trim()};
-        if(state.editingId)await api("/api/transactions/"+state.editingId,{method:"PUT",body:body});
-        else await api("/api/transactions",{method:"POST",body:body});
-      }
-      recordHist($("fNote").value,$("fTags").value);
-      show("txModal",false);toast("Đã lưu giao dịch");loadTx();loadDashboard();
-    }catch(e){$("txFormMsg").textContent=e.message;}
-  };
+  $("btnSaveTx").onclick=function(){saveTxForm();};
   $("btnAddTxTop").onclick=function(){openTxModal("expense");};
   $("txMonth").addEventListener("change",loadTx);$("txCatFilter").addEventListener("change",loadTx);$("txSearch").addEventListener("input",function(){clearTimeout(this._t);this._t=setTimeout(loadTx,400);});
   $("dashPrev").onclick=function(){shiftDashMonth(-1);};
