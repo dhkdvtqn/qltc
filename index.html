@@ -58,6 +58,36 @@ h1{font-size:22px}h2{font-size:18px;margin:4px 0 12px}h3{font-size:16px}
 /* Bieu tuong ngay hien tai (kieu lich de ban: so ngay duoi dai mau do) */
 .today-ico{position:relative;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:#fff;color:#111;font-size:12px;font-weight:800;line-height:1;padding-top:5px;box-sizing:border-box;border:1px solid #CBD5E1}
 .today-ico::before{content:"";position:absolute;top:0;left:0;right:0;height:6px;background:#DC2626;border-radius:5px 5px 0 0}
+/* Dien thoai: an topbar (logo + tai khoan) de tiet kiem khong gian;
+   thong tin tai khoan xem trong Menu. Nut Them giao dich trong muc cung
+   an (da co nut + o thanh duoi). */
+@media (max-width:899px){.add-tx-wrap{display:none}}
+/* Lich ngay o muc Hom nay (kieu so lich): so ngay lon + nhan thu + tong Thu/Chi */
+.day-head{display:flex;align-items:center;gap:10px;padding:4px 0 10px;border-bottom:1px solid var(--line)}
+.dh-num{font-size:30px;font-weight:800;line-height:1}
+.dh-wd{font-size:12px;font-weight:700;color:#fff;background:#9CA3AF;border-radius:5px;padding:3px 7px}
+.dh-wd.sun{background:#F87171}.dh-wd.sat{background:#60A5FA}
+.dh-tot{margin-left:auto;display:flex;gap:14px;font-size:14px;font-weight:700;white-space:nowrap}
+/* Dong giao dich kieu lich ngay: danh muc | noi dung + vi | so tien (khong icon) */
+.day-item{border-bottom:1px solid var(--line);padding:10px 0}
+.day-row{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.dr-cat{flex:0 0 86px;color:var(--muted);font-size:14px;padding-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dr-mid{flex:1;min-width:0}
+.dr-note{font-weight:700;font-size:15px}
+.dr-acc{color:var(--muted);font-size:13px;margin-top:2px}
+.dr-amt{font-weight:700;font-size:15px;white-space:nowrap;padding-top:2px}
+#todayList .tx-btns{display:flex;flex-direction:row;margin-top:8px}
+#todayList .tx-btns .btn{flex:1}
+@media (max-width:899px){
+  /* Dien thoai: nut Sua/Xoa o Hom nay chi hien khi bam vao dong */
+  #todayList .tx-btns{display:none}
+  #todayList .tx-btns.open{display:flex}
+  /* Pie: legend lui xuong, cach bieu do ro hon */
+  #catBreak,#statList{margin-top:16px}
+}
+/* Checkbox/radio trong card bao cao: reset kieu input form (width 100% /
+   min-height) keo dai, de hang tuy chon chi cao bang dong chu. */
+#reportCard input[type="checkbox"],#reportCard input[type="radio"]{width:auto;min-height:0;padding:0;margin:0;flex:none}
 /* KPI Thu/Chi o Tong quan bam duoc de doi so lieu pie */
 .kpi.click{cursor:pointer}
 .kpi.sel{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary)}
@@ -141,6 +171,7 @@ label{display:block;font-size:14px;font-weight:600;margin:12px 0 6px}
 .bottomnav .fab{flex:0 0 64px}
 .bottomnav .fab span{width:52px;height:52px;border-radius:50%;background:var(--primary);color:#fff;font-size:28px;display:flex;align-items:center;justify-content:center;margin-top:-22px;box-shadow:0 4px 14px rgba(37,99,235,.4)}
 .topbar{position:sticky;top:0;background:var(--bg);z-index:30;padding:12px 0 8px;display:flex;align-items:center;gap:10px}
+@media (max-width:899px){.topbar{display:none}} /* dat sau rule goc de thang cascade */
 .topbar .brand{font-weight:800;font-size:18px}
 .topbar .who{margin-left:auto;font-size:13px;color:var(--muted);text-align:right}
 /* Modal */
@@ -341,9 +372,9 @@ html{touch-action:pan-x pan-y}
     </section>
 
     <section id="view-today" class="view hidden">
-      <h2 id="todayTitle">Hôm nay</h2>
-      <div class="card"><p id="todaySummary" class="muted"></p><div id="todayList" style="margin-top:6px"></div>
-      <div style="margin-top:12px"><button class="btn primary block" id="btnAddTxToday" type="button">＋ Thêm giao dịch</button></div></div>
+      <div class="card"><div id="todayHead"></div><div id="todayList" style="margin-top:6px"></div>
+      <p class="muted" style="margin-top:10px">Bấm vào một giao dịch để hiện nút Sửa / Xóa.</p>
+      <div class="add-tx-wrap" style="margin-top:12px"><button class="btn primary block" id="btnAddTxToday" type="button">＋ Thêm giao dịch</button></div></div>
     </section>
 
     <section id="view-notes" class="view hidden">
@@ -351,6 +382,7 @@ html{touch-action:pan-x pan-y}
       <div class="card">
         <textarea id="noteText" rows="3" placeholder="Ghi chú nhanh cho hôm nay…" style="width:100%;min-height:72px;resize:vertical"></textarea>
         <div style="margin-top:10px"><button class="btn primary block" id="btnAddNote" type="button">Lưu ghi chú</button></div>
+        <div style="margin-top:8px"><button class="btn block hidden" id="btnCancelNote" type="button">Hủy sửa</button></div>
         <p class="muted" style="margin-top:8px">Ghi chú lưu trên thiết bị này.</p>
       </div>
       <div class="card"><div id="noteList"></div></div>
@@ -360,7 +392,7 @@ html{touch-action:pan-x pan-y}
       <h2>Giao dịch</h2>
       <div class="card">
         <div class="row" style="flex-direction:column;align-items:stretch"><input id="txMonth" type="month"><input id="txSearch" type="search" placeholder="Tìm nội dung, tag…"><select id="txCatFilter"><option value="">Tất cả danh mục</option></select></div>
-        <div style="margin-top:10px"><button class="btn primary block" id="btnAddTxTop" type="button">＋ Thêm giao dịch</button></div>
+        <div class="add-tx-wrap" style="margin-top:10px"><button class="btn primary block" id="btnAddTxTop" type="button">＋ Thêm giao dịch</button></div>
       </div>
       <div class="card"><div id="txList"></div><p id="txSummary" class="muted" style="margin-top:10px"></p></div>
     </section>
@@ -456,24 +488,22 @@ html{touch-action:pan-x pan-y}
         </div>
         <p class="muted" id="statRangeLabel" style="margin-top:8px"></p>
       </div>
-      <div class="card" id="reportCard"><h3>🖨️ In báo cáo</h3>
-        <p class="muted" style="margin:6px 0 10px">Kỳ báo cáo: <b id="repPeriodLabel">—</b> (đổi ở bộ chọn kỳ phía trên)</p>
-        <label>Loại giao dịch</label>
-        <div style="display:flex;gap:14px;flex-wrap:wrap;margin:4px 0 10px">
-          <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="repKindInc" checked> Thu</label>
-          <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="repKindExp" checked> Chi</label>
-          <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="repKindTrf" checked> Chuyển khoản</label>
-        </div>
-        <label>Hình thức</label>
-        <div style="display:flex;gap:14px;flex-wrap:wrap;margin:4px 0 12px">
-          <label style="display:flex;align-items:center;gap:6px"><input type="radio" name="repForm" id="repFormSum" checked> Tổng hợp theo danh mục</label>
-          <label style="display:flex;align-items:center;gap:6px"><input type="radio" name="repForm" id="repFormDet"> Chi tiết từng giao dịch</label>
-        </div>
-        <button class="btn primary block" id="btnMakeReport" type="button">Tạo báo cáo</button>
-      </div>
       <div class="card hidden" id="statSummaryCard"><h3>📌 Tóm lược toàn bộ thời gian</h3><div id="statSummary"></div></div>
       <div class="card piecard" id="statPieCard"><div class="piewrap"><div id="statPie"></div><div id="statList"></div></div><p class="muted" style="margin-top:6px">Bấm vào một hạng mục để xem lịch sử thu/chi.</p></div>
       <div class="card hidden" id="statTrendCard"><h3>📈 Khuynh hướng thu – chi</h3><canvas id="statLine" width="640" height="240"></canvas><p class="muted">■ Thu &nbsp; ■ Chi</p><div id="statTrendList"></div></div>
+      <div class="card" id="reportCard"><h3>🖨️ In báo cáo</h3>
+        <p class="muted" style="margin:4px 0 8px">Kỳ: <b id="repPeriodLabel">—</b></p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:5px;margin:0"><input type="checkbox" id="repKindInc" checked> Thu</label>
+          <label style="display:flex;align-items:center;gap:5px;margin:0"><input type="checkbox" id="repKindExp" checked> Chi</label>
+          <label style="display:flex;align-items:center;gap:5px;margin:0"><input type="checkbox" id="repKindTrf" checked> Chuyển khoản</label>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px">
+          <label style="display:flex;align-items:center;gap:5px;margin:0"><input type="radio" name="repForm" id="repFormSum" checked> Tổng hợp</label>
+          <label style="display:flex;align-items:center;gap:5px;margin:0"><input type="radio" name="repForm" id="repFormDet"> Chi tiết</label>
+        </div>
+        <div style="margin-top:10px"><button class="btn primary block" id="btnMakeReport" type="button">Tạo báo cáo</button></div>
+      </div>
     </section>
 
     <section id="view-import" class="view hidden">
@@ -588,6 +618,7 @@ html{touch-action:pan-x pan-y}
 <div id="menuModal" class="modal hidden">
   <div class="sheet">
     <h2>Menu</h2>
+    <p id="menuWho" class="muted" style="margin-top:6px"></p>
     <div id="menuList" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px"></div>
     <div style="margin-top:14px"><button class="btn block" id="btnCloseMenu" type="button">Đóng</button></div>
   </div>
@@ -839,10 +870,10 @@ const NAV=[
 function buildNav(){
   const sb=$("sidebar");sb.innerHTML='<div class="brand">💰 MyMoney</div><p class="muted">Quản lý tài chính cá nhân</p>';
   const bn=$("bottomnav");bn.innerHTML="";
-  // Bottom nav 5 nut: Hom nay, Thong ke, + (giua), Note, Menu.
+  // Bottom nav 5 nut: Hom nay, Tong quan, + (giua), Note, Menu.
   // Cac muc con lai vao Menu (openMenu liet ke du NAV).
   const byId=function(id){return NAV.find(function(x){return x[0]===id;});};
-  const main=[byId("today"),byId("reports"),byId("notes")];
+  const main=[byId("today"),byId("dashboard"),byId("notes")];
   function navBtn(item){
     const b=document.createElement("button");b.type="button";b.dataset.view=item[0];
     const ico=item[0]==="today"?'<span class="today-ico" data-today-ico>'+new Date().getDate()+'</span>':item[1];
@@ -867,6 +898,7 @@ function markNav(){
   adminBtns.forEach(function(b){b.style.display=(state.user&&state.user.role==="admin")?"":"none";});
 }
 function openMenu(){
+  $("menuWho").textContent="💰 MyMoney • "+(state.user?state.user.email:"")+(state.user&&state.user.role==="admin"?" • Admin":"");
   const list=$("menuList");list.innerHTML="";
   NAV.forEach(function(it){
     if(state.user&&state.user.role!=="admin"&&it[0]==="admin")return;
@@ -1462,7 +1494,7 @@ function pieSVG(rows,p,uid,desk,label){
       inner+='<path d="M '+cx+' '+cy+' L '+f1(p0[0])+' '+f1(p0[1])+' A '+r+' '+r+' 0 '+large+' 1 '+f1(p3[0])+' '+f1(p3[1])+' Z" fill="'+col+'"/>';
     }
     out+='<g class="slice" data-mid="'+mid.toFixed(3)+'" data-tip="'+escAttr(tip)+'">'+inner+'</g>';
-    if(!desk&&p>=0.999)labels.push({mid:mid,text:(x.category||"Khác")+" "+pct+"%",y:cy+Math.sin(mid)*(r+12)});
+    if(!desk&&p>=0.999)labels.push({mid:mid,text:(x.category||"Khác")+" "+pct+"%",y:cy+Math.sin(mid)*(r+34)});
     a=a1;
   });
   out+='<ellipse cx="'+cx+'" cy="'+cy+'" rx="'+r+'" ry="'+r+'" fill="url(#'+uid+'hi)"/>';
@@ -1490,7 +1522,7 @@ function pieSVG(rows,p,uid,desk,label){
   labels.forEach(function(lb){
     const cos=Math.cos(lb.mid);
     const ex=cx+cos*(r+2),ey=cy+Math.sin(lb.mid)*(r+2);
-    const lx=cx+cos*(r+12),ly=lb.y;
+    const lx=cx+cos*(r+34),ly=lb.y;
     out+='<line x1="'+ex.toFixed(1)+'" y1="'+ey.toFixed(1)+'" x2="'+lx.toFixed(1)+'" y2="'+ly.toFixed(1)+'" stroke="#94A3B8" stroke-width="1"/>';
     out+='<text class="pielbl" x="'+(lx+(cos>=0?4:-4)).toFixed(1)+'" y="'+ly.toFixed(1)+'" text-anchor="'+(cos>=0?"start":"end")+'" dominant-baseline="central">'+esc(lb.text)+'</text>';
   });
@@ -1758,24 +1790,46 @@ async function loadTx(){
     bindTxRowBtns($("txList"),state.tx);
   }catch(e){toast(e.message);}
 }
+/* Dong giao dich kieu lich ngay (muc Hom nay): danh muc | noi dung + vi |
+   so tien, khong icon. Bam vao dong moi hien nut Sua/Xoa (mobile). */
+function todayRowHTML(t){
+  const inc=t.kind==="income",trf=t.kind==="transfer";
+  const sign=inc?"+ ":trf?"⇄ ":"− ";
+  const cls=inc?"inc":trf?"":"exp";
+  const cat=t.category_name||catName(t.category_id)||(trf?"Chuyển khoản":"");
+  return '<div class="day-item"><div class="day-row click" data-txid="'+t.id+'"><span class="dr-cat">'+esc(cat)+'</span><div class="dr-mid"><div class="dr-note">'+esc(t.note||cat||"Giao dịch")+'</div><div class="dr-acc">'+esc(t.account_name||accName(t.account_id))+'</div></div><div class="dr-amt '+cls+'">'+sign+fmt(t.amount)+'</div></div><div class="tx-btns">'+(trf?"":'<button class="btn small" data-act="edit" data-id="'+t.id+'">Sửa</button>')+'<button class="btn small danger" data-act="del" data-id="'+t.id+'">Xóa</button></div></div>';
+}
+function bindTodayRows(box,rows){
+  // Bam dong: mo nut Sua/Xoa cua dong do, dong cac dong khac.
+  box.querySelectorAll(".day-row.click").forEach(function(el){
+    el.onclick=function(){
+      const btns=el.parentElement.querySelector(".tx-btns");
+      const willOpen=!btns.classList.contains("open");
+      box.querySelectorAll(".tx-btns.open").forEach(function(b){b.classList.remove("open");});
+      if(willOpen)btns.classList.add("open");
+    };
+  });
+  bindTxRowBtns(box,rows);
+}
 /* Giao dich trong ngay hien tai (nut dau tien tren bottom nav) */
 async function loadToday(){
   refreshTodayIco();
   const t=todayVN();
-  $("todayTitle").textContent="Hôm nay • "+t.slice(8)+"/"+t.slice(5,7)+"/"+t.slice(0,4);
-  $("todaySummary").textContent="Đang tải…";
+  $("todayHead").innerHTML='<p class="muted">Đang tải…</p>';
   $("todayList").innerHTML="";
   try{
     await loadBase();
     const d=await api("/api/transactions?month="+encodeURIComponent(t.slice(0,7)));
     const rows=(d.transactions||[]).filter(function(x){return x.transaction_date===t;})
       .sort(function(a,b){return Number(b.id)-Number(a.id);});
-    let inc=0,exp=0,trf=0;
-    rows.forEach(function(x){if(x.kind==="income")inc+=x.amount;else if(x.kind==="expense")exp+=x.amount;else trf+=x.amount;});
-    $("todaySummary").textContent=rows.length+" giao dịch hôm nay • Thu "+fmt(inc)+" • Chi "+fmt(exp)+(trf?" • Chuyển "+fmt(trf):"");
-    $("todayList").innerHTML=rows.length?rows.map(txRowHTML).join(""):'<p class="muted">Chưa có giao dịch nào hôm nay.</p>';
-    bindTxRowBtns($("todayList"),rows);
-  }catch(e){$("todaySummary").textContent="Không tải được danh sách.";}
+    let inc=0,exp=0;
+    rows.forEach(function(x){if(x.kind==="income")inc+=x.amount;else if(x.kind==="expense")exp+=x.amount;});
+    const wd=new Date(+t.slice(0,4),+t.slice(5,7)-1,+t.slice(8)).getDay();
+    const wdCls=wd===0?" sun":wd===6?" sat":"";
+    $("todayHead").innerHTML='<div class="day-head"><span class="dh-num">'+(+t.slice(8))+'</span><span class="dh-wd'+wdCls+'">'+(wd===0?"CN":"Th "+(wd+1))+'</span><span class="dh-tot"><span class="inc">Thu '+fmt(inc)+'</span><span class="exp">Chi '+fmt(exp)+'</span></span></div>';
+    $("todayList").innerHTML=rows.length?rows.map(todayRowHTML).join(""):'<p class="muted">Chưa có giao dịch nào hôm nay.</p>';
+    bindTodayRows($("todayList"),rows);
+  }catch(e){$("todayHead").innerHTML='<p class="muted">Không tải được danh sách.</p>';}
 }
 /* ================= Note (luu tren thiet bi, chua dong bo tai khoan) ================= */
 const LS_NOTES="mymoney_notes";
@@ -1802,21 +1856,50 @@ function renderNotes(){
     const lbl=noteDayLabel(n.ts);
     if(lbl!==cur){cur=lbl;h+='<h3 style="margin:12px 0 4px">'+esc(lbl)+'</h3>';}
     const tm=new Date(n.ts).toLocaleString("vi-VN",{timeZone:"Asia/Ho_Chi_Minh",hour:"2-digit",minute:"2-digit"});
-    h+='<div class="list-item"><div class="mid"><div class="t note-text">'+esc(n.text)+'</div><div class="s">'+esc(tm)+'</div></div><button class="btn small danger" data-note-del="'+n.id+'">Xóa</button></div>';
+    h+='<div class="list-item"><div class="mid"><div class="t note-text">'+esc(n.text)+'</div><div class="s">'+esc(tm)+'</div></div><div style="display:flex;flex-direction:column;gap:4px"><button class="btn small" data-note-edit="'+n.id+'">Sửa</button><button class="btn small danger" data-note-del="'+n.id+'">Xóa</button></div></div>';
   });
   box.innerHTML=h;
+  box.querySelectorAll("button[data-note-edit]").forEach(function(b){
+    b.onclick=function(){
+      const n=getNotes().find(function(x){return String(x.id)===b.dataset.noteEdit;});
+      if(!n)return;
+      editingNoteId=n.id;
+      $("noteText").value=n.text;
+      $("btnAddNote").textContent="Lưu thay đổi";
+      show("btnCancelNote",true);
+      $("noteText").focus();
+      try{$("noteText").scrollIntoView({behavior:"smooth",block:"center"});}catch(e){}
+    };
+  });
   box.querySelectorAll("button[data-note-del]").forEach(function(b){
     b.onclick=function(){
       if(!confirm("Xóa ghi chú này?"))return;
       saveNotes(getNotes().filter(function(n){return String(n.id)!==b.dataset.noteDel;}));
+      if(editingNoteId!=null&&String(editingNoteId)===b.dataset.noteDel)cancelEditNote();
       renderNotes();toast("Đã xóa ghi chú");
     };
   });
+}
+let editingNoteId=null;
+function cancelEditNote(){
+  editingNoteId=null;
+  $("noteText").value="";
+  $("btnAddNote").textContent="Lưu ghi chú";
+  show("btnCancelNote",false);
 }
 function addNote(){
   const el=$("noteText");const text=(el.value||"").trim();
   if(!text)return toast("Nhập nội dung ghi chú trước đã");
   const list=getNotes();
+  if(editingNoteId!=null){
+    const n=list.find(function(x){return String(x.id)===String(editingNoteId);});
+    if(n)n.text=text;
+    saveNotes(list);
+    cancelEditNote();
+    renderNotes();
+    toast("Đã lưu thay đổi");
+    return;
+  }
   list.push({id:Date.now(),text:text,ts:Date.now()});
   saveNotes(list);
   el.value="";
@@ -2398,7 +2481,11 @@ function bindForms(){
     const el=calcPadTarget;if(!el)return;
     const key=b.dataset.key;
     if(key==="✓"){
-      hideCalcPad();el.blur(); // blur se tu tinh bieu thuc con do
+      // Tri hoan an ban phim: an ngay trong pointerdown co the khien click
+      // bi chuyen xuong nut nam duoi (vd nut Them vi) -> luu nham.
+      // blur (tinh bieu thuc) cung tri hoan theo, vi blur cung goi hideCalcPad.
+      calcPadTarget=null;
+      setTimeout(function(){hideCalcPad();el.blur();},150);
       return; // Chi dong ban phim; chi luu khi bam nut "Luu".
     }
     calcPadApply(el,key);
@@ -2475,6 +2562,7 @@ function bindForms(){
   $("kpiExp").onclick=function(){setDashPieKind("expense");};
   $("btnAddTxToday").onclick=function(){openTxModal("expense");};
   $("btnAddNote").onclick=function(){addNote();};
+  $("btnCancelNote").onclick=function(){cancelEditNote();};
   $("dashNext").onclick=function(){shiftDashMonth(1);};
   $("btnAddAcc").onclick=async function(){
     if(!$("accName").value.trim())return toast("Nhập tên ví");
