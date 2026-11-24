@@ -406,7 +406,7 @@ html{touch-action:pan-x pan-y}
       </div>
       <div id="todayPanelCal" class="hidden">
         <div class="card"><div id="todayCal"></div></div>
-        <div class="card"><div id="todayCalDetail"></div></div>
+        <p class="muted" style="margin-top:8px">Bấm vào một ngày để xem chi tiết giao dịch của ngày đó.</p>
       </div>
       <div id="todayPanelMonths" class="hidden">
         <div class="card"><div class="monthnav" style="margin-bottom:6px"><button type="button" id="todayYearPrev" aria-label="Năm trước">‹</button><span class="mlbl" id="todayYearLabel">2026</span><button type="button" id="todayYearNext" aria-label="Năm sau">›</button></div><div id="todayMonths"></div></div>
@@ -607,6 +607,14 @@ html{touch-action:pan-x pan-y}
 </div>
 
 <!-- ===== MODAL GIAO DỊCH ===== -->
+<div id="calDetailModal" class="modal hidden">
+  <div class="sheet">
+    <h2 id="calDetailTitle"></h2>
+    <div id="calDetailBody" style="margin-top:6px"></div>
+    <div style="margin-top:14px"><button class="btn primary block" id="btnAddTxCalDay" type="button">＋ Thêm giao dịch ngày này</button></div>
+    <div style="margin-top:8px"><button class="btn block" id="btnCloseCalDetail" type="button">Đóng</button></div>
+  </div>
+</div>
 <div id="txModal" class="modal hidden">
   <div class="sheet">
     <h2 id="txModalTitle">Thêm giao dịch</h2>
@@ -899,7 +907,7 @@ function logout(silent){
 }
 
 /* ================= State ================= */
-const state={user:null,accounts:[],categories:[],tx:[],budgets:[],recurrings:[],goals:[],view:"transactions",txKind:"expense",editingId:null,editingRecId:null,editingAccId:null,impRows:[],impHeaders:[],dashMonth:null,editingTags:"",editingTxAccount:null,catDetailCtx:null,fCatAdding:false,dashPieKind:"expense",dashExpRows:[],dashExpTot:0,todayMonth:null,todayTab:"daily",todayTxCache:{},todayCalSel:null,todayYear:null};
+const state={user:null,accounts:[],categories:[],tx:[],budgets:[],recurrings:[],goals:[],view:"transactions",txKind:"expense",editingId:null,editingRecId:null,editingAccId:null,impRows:[],impHeaders:[],dashMonth:null,editingTags:"",editingTxAccount:null,catDetailCtx:null,fCatAdding:false,dashPieKind:"expense",dashExpRows:[],dashExpTot:0,todayMonth:null,todayTab:"daily",todayTxCache:{},todayCalSel:null,todayYear:null,calDetailDay:null};
 const NAV=[
   ["today","📅","Hôm nay"],["dashboard","🏠","Tổng quan"],["transactions","↕️","Giao dịch"],["accounts","💰","Ví"],
   ["notes","📝","Note"],
@@ -1086,6 +1094,7 @@ function refreshAfterTx(){
   state.todayTxCache={};
   loadTx();loadDashboard();loadStats();
   if(state.view==="today")loadToday();
+  if(state.calDetailDay&&!$("calDetailModal").classList.contains("hidden"))openCalDetail(state.calDetailDay);
   if(state.catDetailCtx&&!$("catDetailModal").classList.contains("hidden"))reloadCatDetail();
 }
 function reloadCatDetail(){
@@ -1933,7 +1942,7 @@ async function loadTodayCal(){
     renderTodayMonthSum(rows);
     const byDay={};
     rows.forEach(function(t){const d=byDay[t.transaction_date]||(byDay[t.transaction_date]={inc:0,exp:0});if(t.kind==="income")d.inc+=t.amount;else if(t.kind==="expense")d.exp+=t.amount;});
-    if(!state.todayCalSel||state.todayCalSel.slice(0,7)!==m)state.todayCalSel=(m===monthVN())?todayVN():null;
+    if(state.todayCalSel&&state.todayCalSel.slice(0,7)!==m)state.todayCalSel=null;
     const y=+m.slice(0,4),mo=+m.slice(5)-1;
     const startOff=(new Date(y,mo,1).getDay()+6)%7; // T2 = 0
     const days=new Date(y,mo+1,0).getDate();
@@ -1950,19 +1959,31 @@ async function loadTodayCal(){
     h+='</div>';
     $("todayCal").innerHTML=h;
     $("todayCal").querySelectorAll(".cal-cell[data-iso]").forEach(function(c){
-      c.onclick=function(){state.todayCalSel=c.dataset.iso;loadTodayCal();};
+      c.onclick=function(){
+        state.todayCalSel=c.dataset.iso;
+        document.querySelectorAll("#todayCal .cal-cell.sel").forEach(function(x){x.classList.remove("sel");});
+        c.classList.add("sel");
+        openCalDetail(c.dataset.iso);
+      };
     });
-    renderTodayCalDetail(rows);
   }catch(e){$("todayCal").innerHTML='<p class="muted">Không tải được lịch.</p>';}
 }
-function renderTodayCalDetail(rows){
-  const box=$("todayCalDetail");
-  const sel=state.todayCalSel;
-  if(!sel){box.innerHTML='<p class="muted">Bấm vào một ngày trên lịch để xem chi tiết.</p>';return;}
-  const dayRows=rows.filter(function(t){return t.transaction_date===sel;}).sort(function(a,b){return Number(b.id)-Number(a.id);});
-  if(!dayRows.length){box.innerHTML=dayHeadHTML(sel,0,0)+'<p class="muted">Ngày này chưa có giao dịch.</p>';return;}
-  box.innerHTML=dayGroupHTML({date:sel,rows:dayRows},false);
-  bindTodayRows(box,dayRows);
+/* Popup chi tiet giao dich cua 1 ngay (tab Ngay): bam ngay tren lich thi mo. */
+async function openCalDetail(iso){
+  state.todayCalSel=iso;
+  state.calDetailDay=iso;
+  const w=wdInfo(iso);
+  $("calDetailTitle").textContent="Ngày "+(+iso.slice(8))+" "+w.txt+" • "+iso.slice(5,7)+"/"+iso.slice(0,4);
+  $("calDetailBody").innerHTML='<p class="muted">Đang tải…</p>';
+  show("calDetailModal",true);
+  try{
+    await loadBase();
+    const rows=await fetchMonthTx(iso.slice(0,7));
+    const dayRows=rows.filter(function(t){return t.transaction_date===iso;}).sort(function(a,b){return Number(b.id)-Number(a.id);});
+    if(!dayRows.length){$("calDetailBody").innerHTML=dayHeadHTML(iso,0,0)+'<p class="muted">Ngày này chưa có giao dịch.</p>';return;}
+    $("calDetailBody").innerHTML=dayGroupHTML({date:iso,rows:dayRows},false);
+    bindTodayRows($("calDetailBody"),dayRows);
+  }catch(e){$("calDetailBody").innerHTML='<p class="muted">Không tải được danh sách.</p>';}
 }
 /* Tab Thang: tong Thu/Chi tung thang trong nam (qua /api/dashboard?year);
    bam thang thi mo chi tiet tung ngay, bam ngay thi mo giao dich cua ngay. */
@@ -2669,6 +2690,8 @@ function bindForms(){
   $("btnCloseTx").onclick=function(){show("txModal",false);};
   $("btnCloseMenu").onclick=function(){show("menuModal",false);};
   $("btnCloseCatDetail").onclick=function(){show("catDetailModal",false);};
+  $("btnCloseCalDetail").onclick=function(){state.calDetailDay=null;show("calDetailModal",false);};
+  $("btnAddTxCalDay").onclick=function(){const d=state.calDetailDay;state.calDetailDay=null;show("calDetailModal",false);openTxModal("expense");if(d)$("fDate").value=d;};
   $("menuModal").addEventListener("click",function(e){if(e.target===$("menuModal"))show("menuModal",false);});
   $("txModal").addEventListener("click",function(e){if(e.target===$("txModal"))show("txModal",false);});
   $("catDetailModal").addEventListener("click",function(e){if(e.target===$("catDetailModal"))show("catDetailModal",false);});
