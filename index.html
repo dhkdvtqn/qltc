@@ -302,7 +302,7 @@ html{touch-action:pan-x pan-y}
 @media (min-width:1200px){
   /* Dashboard: 2 cot — pie + ngan sach; dong tien + giao dich gan day full-width */
   #view-dashboard{display:grid;grid-template-columns:7fr 5fr;gap:16px;align-items:start}
-  #view-dashboard .monthnav,#view-dashboard .grid3,#view-dashboard .flowcard,#view-dashboard .recentcard{grid-column:1/-1}
+  #view-dashboard .monthnav,#view-dashboard .grid3,#view-dashboard .flowcard,#view-dashboard .recentcard,#statCard,#statSummaryCard,#statTrendCard,#reportCard{grid-column:1/-1}
   #view-dashboard .card{margin-bottom:0}
   .piecard #catPie,.piecard #statPie{flex-basis:360px;max-width:360px}
   .piecard .catbar .nm{width:130px}
@@ -420,7 +420,6 @@ html{touch-action:pan-x pan-y}
         <p class="muted" id="statRangeLabel" style="margin-top:8px"></p>
       </div>
       <div class="card hidden" id="statSummaryCard"><h3>📌 Tóm lược toàn bộ thời gian</h3><div id="statSummary"></div></div>
-      <div class="card piecard" id="statPieCard"><h3>Thu / Chi theo danh mục</h3><div class="piewrap"><div id="statPie"></div><div id="statList"></div></div><p class="muted" style="margin-top:6px">Bấm vào một hạng mục để xem lịch sử thu/chi.</p></div>
       <div class="card hidden" id="statTrendCard"><h3>📈 Khuynh hướng thu – chi</h3><canvas id="statLine" width="640" height="240"></canvas><p class="muted">■ Thu &nbsp; ■ Chi</p><div id="statTrendList"></div></div>
       <div class="card" id="reportCard"><h3>🖨️ In báo cáo</h3>
         <p class="muted" style="margin:4px 0 8px">Kỳ: <b id="repPeriodLabel">—</b></p>
@@ -2392,7 +2391,6 @@ async function loadStats(){
     $("statPeriodWrap").classList.toggle("hidden",mode!=="period");
     show("statKindTabs",mode!=="trend");
     show("statTrendTabs",mode==="trend");
-    show("statPieCard",mode!=="trend");
     show("statTrendCard",mode==="trend");
     show("statSummaryCard",mode==="summary");
     if(mode==="trend"){
@@ -2418,12 +2416,6 @@ async function loadStats(){
     }
     const q=r?("?kind="+statState.kind+"&from="+encodeURIComponent(r.from)+"&to="+encodeURIComponent(r.to)):("?kind="+statState.kind);
     const d=await api("/api/stats"+q);
-    const statPieRows=assignPieColors(d.byCategory||[]);
-    renderPie($("statPie"),statPieRows,statState.kind==="income"?"Tổng thu":"Tổng chi");
-    $("statList").innerHTML=statListHTML(statPieRows,d.total||0);
-    $("statList").querySelectorAll(".catbar.click").forEach(function(el){
-      el.onclick=function(){openStatCatDetail(el.getAttribute("data-cat")||"");};
-    });
     $("statRangeLabel").textContent=(r?r.label:"Toàn bộ thời gian")+" • Tổng "+(statState.kind==="income"?"thu":"chi")+": "+fmt(d.total||0);
     $("repPeriodLabel").textContent=r?r.label:"Toàn bộ thời gian";
   }catch(e){toast(e.message);}
