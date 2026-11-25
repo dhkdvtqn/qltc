@@ -179,6 +179,9 @@ label{display:block;font-size:14px;font-weight:600;margin:12px 0 6px}
 .tabs button{flex:1;min-height:48px;border-radius:12px;border:1px solid var(--line);background:var(--card);font-weight:700}
 .tabs button.on{background:var(--primary);border-color:var(--primary);color:#fff}
 .seg{display:flex;flex-wrap:wrap;gap:6px}
+.minitabs{display:flex;gap:4px;margin-top:8px}
+.minitabs button{flex:1;min-height:34px;padding:5px 2px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:12px;font-weight:600;line-height:1.25}
+.minitabs button.on{background:var(--primary);border-color:var(--primary);color:#fff}
 .seg button{flex:1 1 28%;min-height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);font-weight:700;font-size:15px}
 .seg button.on{background:var(--primary);border-color:var(--primary);color:#fff}
 .linkbtn{background:none;border:0;color:var(--primary);font-weight:600;padding:8px 0;text-align:left}
@@ -389,6 +392,49 @@ html{touch-action:pan-x pan-y}
       <div class="card budgetcard"><h3 id="budgetTitle">🎯 Ngân sách tháng này</h3><div id="budgetDash"></div></div>
       <div class="card flowcard desk-only"><h3>Dòng tiền theo tháng</h3><div id="flowChart"></div></div>
       <div class="card recentcard desk-only"><h3>Giao dịch gần đây</h3><div id="recentTx"></div><button class="linkbtn" id="btnRecentAll" type="button">Xem tất cả giao dịch →</button></div>
+      <div class="card" id="statCard">
+        <h3>📊 Thống kê theo kỳ</h3>
+        <div class="minitabs" id="statModes">
+          <button type="button" data-mode="week">Tuần</button>
+          <button type="button" data-mode="month" class="on">Tháng</button>
+          <button type="button" data-mode="year">Năm</button>
+          <button type="button" data-mode="period">Period</button>
+          <button type="button" data-mode="summary">Tóm lược</button>
+          <button type="button" data-mode="trend">Khuynh hướng</button>
+        </div>
+        <div class="minitabs" id="statKindTabs">
+          <button type="button" id="statTabExp" class="on">Chi</button>
+          <button type="button" id="statTabInc">Thu</button>
+        </div>
+        <div class="minitabs hidden" id="statTrendTabs">
+          <button type="button" data-unit="week">Tuần</button>
+          <button type="button" data-unit="month" class="on">Tháng</button>
+          <button type="button" data-unit="year">Năm</button>
+        </div>
+        <div class="row" style="margin-top:8px" id="statControls">
+          <input id="statWeek" type="week" class="hidden">
+          <input id="statMonth" type="month">
+          <select id="statYear" class="hidden"></select>
+          <span id="statPeriodWrap" class="hidden" style="display:flex;gap:8px;flex:1"><input id="statFrom" type="date" style="flex:1"><input id="statTo" type="date" style="flex:1"></span>
+        </div>
+        <p class="muted" id="statRangeLabel" style="margin-top:8px"></p>
+      </div>
+      <div class="card hidden" id="statSummaryCard"><h3>📌 Tóm lược toàn bộ thời gian</h3><div id="statSummary"></div></div>
+      <div class="card piecard" id="statPieCard"><h3>Thu / Chi theo danh mục</h3><div class="piewrap"><div id="statPie"></div><div id="statList"></div></div><p class="muted" style="margin-top:6px">Bấm vào một hạng mục để xem lịch sử thu/chi.</p></div>
+      <div class="card hidden" id="statTrendCard"><h3>📈 Khuynh hướng thu – chi</h3><canvas id="statLine" width="640" height="240"></canvas><p class="muted">■ Thu &nbsp; ■ Chi</p><div id="statTrendList"></div></div>
+      <div class="card" id="reportCard"><h3>🖨️ In báo cáo</h3>
+        <p class="muted" style="margin:4px 0 8px">Kỳ: <b id="repPeriodLabel">—</b></p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:5px;margin:0"><input type="checkbox" id="repKindInc" checked> Thu</label>
+          <label style="display:flex;align-items:center;gap:5px;margin:0"><input type="checkbox" id="repKindExp" checked> Chi</label>
+          <label style="display:flex;align-items:center;gap:5px;margin:0"><input type="checkbox" id="repKindTrf" checked> Chuyển khoản</label>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px">
+          <label style="display:flex;align-items:center;gap:5px;margin:0"><input type="radio" name="repForm" id="repFormSum" checked> Tổng hợp</label>
+          <label style="display:flex;align-items:center;gap:5px;margin:0"><input type="radio" name="repForm" id="repFormDet"> Chi tiết</label>
+        </div>
+        <div style="margin-top:10px"><button class="btn primary block" id="btnMakeReport" type="button">Tạo báo cáo</button></div>
+      </div>
     </section>
 
     <section id="view-today" class="view hidden">
@@ -501,51 +547,6 @@ html{touch-action:pan-x pan-y}
       </div>
     </section>
 
-    <section id="view-reports" class="view hidden">
-      <h2>Thống kê</h2>
-      <div class="card">
-        <div class="seg" id="statModes">
-          <button type="button" data-mode="week">Tuần</button>
-          <button type="button" data-mode="month" class="on">Tháng</button>
-          <button type="button" data-mode="year">Hàng năm</button>
-          <button type="button" data-mode="period">Period</button>
-          <button type="button" data-mode="summary">Tóm lược</button>
-          <button type="button" data-mode="trend">Khuynh hướng</button>
-        </div>
-        <div class="tabs" id="statKindTabs" style="margin-top:12px">
-          <button type="button" id="statTabExp" class="on">Chi</button>
-          <button type="button" id="statTabInc">Thu</button>
-        </div>
-        <div class="tabs hidden" id="statTrendTabs" style="margin-top:12px">
-          <button type="button" data-unit="week">Tuần</button>
-          <button type="button" data-unit="month" class="on">Tháng</button>
-          <button type="button" data-unit="year">Năm</button>
-        </div>
-        <div class="row" style="margin-top:12px" id="statControls">
-          <input id="statWeek" type="week" class="hidden">
-          <input id="statMonth" type="month">
-          <select id="statYear" class="hidden"></select>
-          <span id="statPeriodWrap" class="hidden" style="display:flex;gap:8px;flex:1"><input id="statFrom" type="date" style="flex:1"><input id="statTo" type="date" style="flex:1"></span>
-        </div>
-        <p class="muted" id="statRangeLabel" style="margin-top:8px"></p>
-      </div>
-      <div class="card hidden" id="statSummaryCard"><h3>📌 Tóm lược toàn bộ thời gian</h3><div id="statSummary"></div></div>
-      <div class="card piecard" id="statPieCard"><div class="piewrap"><div id="statPie"></div><div id="statList"></div></div><p class="muted" style="margin-top:6px">Bấm vào một hạng mục để xem lịch sử thu/chi.</p></div>
-      <div class="card hidden" id="statTrendCard"><h3>📈 Khuynh hướng thu – chi</h3><canvas id="statLine" width="640" height="240"></canvas><p class="muted">■ Thu &nbsp; ■ Chi</p><div id="statTrendList"></div></div>
-      <div class="card" id="reportCard"><h3>🖨️ In báo cáo</h3>
-        <p class="muted" style="margin:4px 0 8px">Kỳ: <b id="repPeriodLabel">—</b></p>
-        <div style="display:flex;gap:12px;flex-wrap:wrap">
-          <label style="display:flex;align-items:center;gap:5px;margin:0"><input type="checkbox" id="repKindInc" checked> Thu</label>
-          <label style="display:flex;align-items:center;gap:5px;margin:0"><input type="checkbox" id="repKindExp" checked> Chi</label>
-          <label style="display:flex;align-items:center;gap:5px;margin:0"><input type="checkbox" id="repKindTrf" checked> Chuyển khoản</label>
-        </div>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px">
-          <label style="display:flex;align-items:center;gap:5px;margin:0"><input type="radio" name="repForm" id="repFormSum" checked> Tổng hợp</label>
-          <label style="display:flex;align-items:center;gap:5px;margin:0"><input type="radio" name="repForm" id="repFormDet"> Chi tiết</label>
-        </div>
-        <div style="margin-top:10px"><button class="btn primary block" id="btnMakeReport" type="button">Tạo báo cáo</button></div>
-      </div>
-    </section>
 
     <section id="view-import" class="view hidden">
       <h2>Import dữ liệu</h2>
@@ -921,7 +922,7 @@ const NAV=[
   ["today","📅","Hôm nay"],["dashboard","🏠","Tổng quan"],["transactions","↕️","Giao dịch"],["accounts","💰","Ví"],
   ["notes","📝","Note"],
   ["categories","🏷️","Danh mục"],["budgets","🎯","Ngân sách"],["recurring","🔁","Định kỳ"],
-  ["goals","⭐","Mục tiêu"],["reports","📊","Thống kê"],["import","⇩","Import"],
+  ["goals","⭐","Mục tiêu"],["import","⇩","Import"],
   ["settings","⚙️","Cài đặt"],["admin","🛡️","Quản trị"]
 ];
 function buildNav(){
@@ -970,14 +971,13 @@ function go(view){
   const el=$("view-"+view);if(el)el.classList.remove("hidden");
   if(view==="today")loadToday();
   if(view==="notes")renderNotes();
-  if(view==="dashboard")loadDashboard();
+  if(view==="dashboard"){loadDashboard();loadStats();}
   if(view==="transactions")loadTx();
   if(view==="accounts")loadAccounts();
   if(view==="categories")loadCategories();
   if(view==="budgets")loadBudgets();
   if(view==="recurring")loadRecurring();
   if(view==="goals")loadGoals();
-  if(view==="reports")loadStats();
   if(view==="import")fillAccountSelects();
   if(view==="settings")fillSettings();
   if(view==="admin")loadAdmin();
