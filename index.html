@@ -382,18 +382,8 @@ html{touch-action:pan-x pan-y}
   <div class="wrap">
     <div class="topbar"><div class="brand">💰 MyMoney</div><div class="who" id="whoBox"></div></div>
     <section id="view-dashboard" class="view">
-      <div class="monthnav"><button type="button" id="dashPrev" aria-label="Tháng trước">‹</button><span class="mlbl" id="dashMonthLabel">Tháng này</span><button type="button" id="dashNext" aria-label="Tháng sau">›</button></div>
-      <div class="grid3" style="margin-bottom:12px">
-        <div class="kpi kpi-inc click" id="kpiInc"><span class="kic">📥</span><div class="lbl">Thu</div><div class="val inc" id="kInc">—</div><div class="cmp" id="kIncCmp"></div></div>
-        <div class="kpi kpi-exp click" id="kpiExp"><span class="kic">📤</span><div class="lbl">Chi</div><div class="val exp" id="kExp">—</div><div class="cmp" id="kExpCmp"></div></div>
-        <div class="kpi kpi-bal"><span class="kic">💰</span><div class="lbl">Dư</div><div class="val" id="kTotal">—</div><div class="cmp" id="kTotCmp"></div></div>
-      </div>
-      <div class="card piecard"><h3 id="pieCardTitle">Chi tiêu theo danh mục</h3><div class="piewrap"><div id="catPie"></div><div id="catBreak"></div></div><p class="muted" id="pieCardHint" style="margin-top:6px">Bấm vào một hạng mục để xem chi tiết các khoản chi.</p></div>
-      <div class="card budgetcard"><h3 id="budgetTitle">🎯 Ngân sách tháng này</h3><div id="budgetDash"></div></div>
-      <div class="card flowcard desk-only"><h3>Dòng tiền theo tháng</h3><div id="flowChart"></div></div>
-      <div class="card recentcard desk-only"><h3>Giao dịch gần đây</h3><div id="recentTx"></div><button class="linkbtn" id="btnRecentAll" type="button">Xem tất cả giao dịch →</button></div>
       <div class="card" id="statCard">
-        <h3>📊 Thống kê theo kỳ</h3>
+        <h3>📊 Kỳ xem báo cáo</h3>
         <div class="minitabs" id="statModes">
           <button type="button" data-mode="week">Tuần</button>
           <button type="button" data-mode="month" class="on">Tháng</button>
@@ -419,7 +409,15 @@ html{touch-action:pan-x pan-y}
         </div>
         <p class="muted" id="statRangeLabel" style="margin-top:8px"></p>
       </div>
-      <div class="card hidden" id="statSummaryCard"><h3>📌 Tóm lược toàn bộ thời gian</h3><div id="statSummary"></div></div>
+      <div class="grid3" style="margin-bottom:12px">
+        <div class="kpi kpi-inc click" id="kpiInc"><span class="kic">📥</span><div class="lbl">Thu</div><div class="val inc" id="kInc">—</div><div class="cmp" id="kIncCmp"></div></div>
+        <div class="kpi kpi-exp click" id="kpiExp"><span class="kic">📤</span><div class="lbl">Chi</div><div class="val exp" id="kExp">—</div><div class="cmp" id="kExpCmp"></div></div>
+        <div class="kpi kpi-bal"><span class="kic">💰</span><div class="lbl">Dư</div><div class="val" id="kTotal">—</div><div class="cmp" id="kTotCmp"></div></div>
+      </div>
+      <div class="card piecard"><h3 id="pieCardTitle">Chi tiêu theo danh mục</h3><div class="piewrap"><div id="catPie"></div><div id="catBreak"></div></div><p class="muted" id="pieCardHint" style="margin-top:6px">Bấm vào một hạng mục để xem chi tiết các khoản chi.</p></div>
+      <div class="card budgetcard" id="budgetCard"><h3 id="budgetTitle">🎯 Ngân sách tháng này</h3><div id="budgetDash"></div></div>
+      <div class="card flowcard desk-only"><h3>Dòng tiền theo tháng</h3><div id="flowChart"></div></div>
+      <div class="card recentcard desk-only"><h3>Giao dịch gần đây</h3><div id="recentTx"></div><button class="linkbtn" id="btnRecentAll" type="button">Xem tất cả giao dịch →</button></div>
       <div class="card hidden" id="statTrendCard"><h3>📈 Khuynh hướng thu – chi</h3><canvas id="statLine" width="640" height="240"></canvas><p class="muted">■ Thu &nbsp; ■ Chi</p><div id="statTrendList"></div></div>
       <div class="card" id="reportCard"><h3>🖨️ In báo cáo</h3>
         <p class="muted" style="margin:4px 0 8px">Kỳ: <b id="repPeriodLabel">—</b></p>
@@ -916,7 +914,7 @@ function logout(silent){
 }
 
 /* ================= State ================= */
-const state={user:null,accounts:[],categories:[],tx:[],budgets:[],recurrings:[],goals:[],view:"transactions",txKind:"expense",editingId:null,editingRecId:null,editingAccId:null,impRows:[],impHeaders:[],dashMonth:null,editingTags:"",editingTxAccount:null,catDetailCtx:null,fCatAdding:false,dashPieKind:"expense",dashExpRows:[],dashExpTot:0,todayMonth:null,todayTab:"daily",todayTxCache:{},todayCalSel:null,todayYear:null,calDetailDay:null};
+const state={user:null,accounts:[],categories:[],tx:[],budgets:[],recurrings:[],goals:[],view:"transactions",txKind:"expense",editingId:null,editingRecId:null,editingAccId:null,impRows:[],impHeaders:[],editingTags:"",editingTxAccount:null,catDetailCtx:null,fCatAdding:false,dashIncRows:[],dashIncTot:0,dashExpRows:[],dashExpTot:0,todayMonth:null,todayTab:"daily",todayTxCache:{},todayCalSel:null,todayYear:null,calDetailDay:null};
 const NAV=[
   ["today","📅","Hôm nay"],["dashboard","🏠","Tổng quan"],["transactions","↕️","Giao dịch"],["accounts","💰","Ví"],
   ["notes","📝","Note"],
@@ -970,7 +968,7 @@ function go(view){
   const el=$("view-"+view);if(el)el.classList.remove("hidden");
   if(view==="today")loadToday();
   if(view==="notes")renderNotes();
-  if(view==="dashboard"){loadDashboard();loadStats();}
+  if(view==="dashboard")reloadDashboard();
   if(view==="transactions")loadTx();
   if(view==="accounts")loadAccounts();
   if(view==="categories")loadCategories();
@@ -1100,7 +1098,7 @@ function clearDefaultAccountId(id){
 // Truoc day chi nap lai giao dich + Tong quan nen tong o Thong ke bi cu.
 function refreshAfterTx(){
   state.todayTxCache={};
-  loadTx();loadDashboard();loadStats();
+  loadTx();reloadDashboard();
   if(state.view==="today")loadToday();
   if(state.calDetailDay&&!$("calDetailModal").classList.contains("hidden"))openCalDetail(state.calDetailDay);
   if(state.catDetailCtx&&!$("catDetailModal").classList.contains("hidden"))reloadCatDetail();
@@ -1241,42 +1239,59 @@ function renderRecentTx(list){
     };
   });
 }
-function shiftDashMonth(delta){
-  const m=state.dashMonth||monthVN();
-  const d=new Date(+m.slice(0,4),+m.slice(5)-1+delta,1);
-  state.dashMonth=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
-  loadDashboard();
-}
+function reloadDashboard(){loadDashboard();loadStats();}
 async function loadDashboard(){
   try{
     await loadBase();
-    const m=state.dashMonth||monthVN();
-    const lbl=dashMonthLabel(m);
-    $("dashMonthLabel").textContent=lbl;
-    const d=await api("/api/dashboard?month="+encodeURIComponent(m)+"&year="+encodeURIComponent(m.slice(0,4)));
-    // O "Du" = Thu - Chi trong thang dang xem (khong phai so du luy ke).
-    $("kTotal").textContent=fmtBig(d.saving);
-    $("kTotal").className="val "+(d.saving>=0?"inc":"exp");
-    $("kInc").textContent=fmtBig(d.income);
-    $("kExp").textContent=fmtBig(d.expense);
-    ["kTotal","kInc","kExp"].forEach(function(id){fitKpi($(id));});
-    $("budgetTitle").textContent="🎯 Ngân sách "+lbl.toLowerCase();
-    state.dashExpRows=assignPieColors(d.byCategory||[]);
-    state.dashExpTot=state.dashExpRows.reduce(function(s,x){return s+Number(x.total||0);},0);
+    const mode=statState.mode;
+    const R=dashRange();
+    if(mode!=="summary"&&mode!=="trend"&&!R){
+      $("statRangeLabel").textContent="Chọn kỳ thống kê.";
+      $("repPeriodLabel").textContent="—";
+      return;
+    }
+    const q=R?("&from="+encodeURIComponent(R.from)+"&to="+encodeURIComponent(R.to)):"";
+    const [incD,expD]=await Promise.all([
+      api("/api/stats?kind=income"+q),
+      api("/api/stats?kind=expense"+q)
+    ]);
+    const inc=incD.total||0,exp=expD.total||0,sv=inc-exp;
+    // KPI Thu/Chi/Du chay theo ky dang chon (khong chi thang hien tai).
+    $("kInc").textContent=fmtBig(inc);
+    $("kExp").textContent=fmtBig(exp);
+    $("kTotal").textContent=fmtBig(sv);
+    $("kTotal").className="val "+(sv>=0?"inc":"exp");
+    state.dashIncRows=assignPieColors(incD.byCategory||[]);state.dashIncTot=inc;
+    state.dashExpRows=assignPieColors(expD.byCategory||[]);state.dashExpTot=exp;
     renderDashPie();
-    $("budgetDash").innerHTML=(d.budgets||[]).length?(d.budgets||[]).map(function(b){
-      const p=b.limit_amount?Math.round(b.spent/b.limit_amount*100):0;
-      const cls=p>=100?"over":(p>=80?"warn":"");
-      return '<div style="margin-bottom:12px"><div class="row"><b style="flex:1">'+esc(b.category_name)+'</b><span>'+fmt(b.spent)+' / '+fmt(b.limit_amount)+' ('+p+'%)</span></div><div class="bar '+cls+'"><i style="width:'+Math.min(p,100)+'%"></i></div></div>';}).join(""):'<p class="muted">Chưa đặt ngân sách tháng này. Vào mục Ngân sách để đặt.</p>';
-    // So sanh voi thang truoc (chi hien tren desktop; du lieu da co san).
-    setCmp($("kIncCmp"),d.income,d.prevIncome||0,true);
-    setCmp($("kExpCmp"),d.expense,d.prevExpense||0,false);
-    const prevSaving=(d.prevIncome||0)-(d.prevExpense||0);
-    const diff=d.saving-prevSaving;
-    const tc=$("kTotCmp");
-    if(tc){
-      if(diff===0){tc.textContent="Không đổi so với tháng trước";tc.className="cmp";}
-      else{tc.textContent=(diff>0?"▲ +":"▼ −")+fmt(Math.abs(diff))+" so với tháng trước";tc.className="cmp "+(diff>0?"inc":"exp");}
+    ["kTotal","kInc","kExp"].forEach(function(id){fitKpi($(id));});
+    // Nhan tong tien cua ky + ky bao cao (che do Khuynh huong do loadStats lo).
+    if(mode!=="trend"){
+      const kindTot=statState.kind==="income"?inc:exp;
+      $("statRangeLabel").textContent=(R?R.label:"Toàn bộ thời gian")+" • Tổng "+(statState.kind==="income"?"thu":"chi")+": "+fmt(kindTot);
+      $("repPeriodLabel").textContent=R?R.label:"Toàn bộ thời gian";
+    }
+    // Ngan sach / so sanh thang truoc: chi co nghia o che do Thang.
+    const m=mode==="month"?($("statMonth").value||monthVN()):monthVN();
+    const d=await api("/api/dashboard?month="+encodeURIComponent(m)+"&year="+encodeURIComponent(m.slice(0,4)));
+    show("budgetCard",mode==="month");
+    if(mode==="month"){
+      $("budgetTitle").textContent="🎯 Ngân sách "+dashMonthLabel(m).toLowerCase();
+      $("budgetDash").innerHTML=(d.budgets||[]).length?(d.budgets||[]).map(function(b){
+        const p=b.limit_amount?Math.round(b.spent/b.limit_amount*100):0;
+        const cls=p>=100?"over":(p>=80?"warn":"");
+        return '<div style="margin-bottom:12px"><div class="row"><b style="flex:1">'+esc(b.category_name)+'</b><span>'+fmt(b.spent)+' / '+fmt(b.limit_amount)+' ('+p+'%)</span></div><div class="bar '+cls+'"><i style="width:'+Math.min(p,100)+'%"></i></div></div>';}).join(""):'<p class="muted">Chưa đặt ngân sách tháng này. Vào mục Ngân sách để đặt.</p>';
+      setCmp($("kIncCmp"),inc,d.prevIncome||0,true);
+      setCmp($("kExpCmp"),exp,d.prevExpense||0,false);
+      const prevSaving=(d.prevIncome||0)-(d.prevExpense||0);
+      const diff=sv-prevSaving;
+      const tc=$("kTotCmp");
+      if(tc){
+        if(diff===0){tc.textContent="Không đổi so với tháng trước";tc.className="cmp";}
+        else{tc.textContent=(diff>0?"▲ +":"▼ −")+fmt(Math.abs(diff))+" so với tháng trước";tc.className="cmp "+(diff>0?"inc":"exp");}
+      }
+    }else{
+      ["kIncCmp","kExpCmp","kTotCmp"].forEach(function(id){const el=$(id);if(el)el.textContent="";});
     }
     // Bieu do dong tien theo thang (an tren dien thoai).
     $("flowChart").innerHTML=flowBarsSVG(d.flow||[],m.slice(0,4));
@@ -1290,52 +1305,52 @@ async function loadDashboard(){
     }
   }catch(e){toast(e.message);}
 }
-/* Pie Tong quan theo loai dang chon — bam KPI Thu/Chi o tren de doi.
-   Chi lay san tu /api/dashboard; Thu lay them qua /api/stats (khong can sua worker). */
-function setDashPieKind(kind){
-  state.dashPieKind=kind==="income"?"income":"expense";
+/* Loai Thu/Chi dung chung cho pie Tong quan + nhan tong tien cua ky:
+   bam KPI Thu/Chi hoac tab Thu/Chi o tren deu doi cung 1 cho. */
+function setDashKind(kind){
+  statState.kind=kind==="income"?"income":"expense";
+  const e=$("statTabExp"),i=$("statTabInc");
+  if(e)e.classList.toggle("on",statState.kind==="expense");
+  if(i)i.classList.toggle("on",statState.kind==="income");
   renderDashPie();
+  if(statState.mode!=="trend"){
+    const R=dashRange();
+    const tot=statState.kind==="income"?state.dashIncTot:state.dashExpTot;
+    $("statRangeLabel").textContent=(R?R.label:"Toàn bộ thời gian")+" • Tổng "+(statState.kind==="income"?"thu":"chi")+": "+fmt(tot||0);
+  }
 }
-async function renderDashPie(){
-  const kind=state.dashPieKind||"expense";
-  const m=state.dashMonth||monthVN();
+function renderDashPie(){
+  const kind=statState.kind||"expense";
   const inc=$("kpiInc"),exp=$("kpiExp");
   if(inc)inc.classList.toggle("sel",kind==="income");
   if(exp)exp.classList.toggle("sel",kind==="expense");
   $("pieCardTitle").textContent=kind==="income"?"Thu nhập theo danh mục":"Chi tiêu theo danh mục";
   $("pieCardHint").textContent="Bấm vào một hạng mục để xem chi tiết các khoản "+(kind==="income"?"thu":"chi")+".";
-  let rows,tot;
-  if(kind==="expense"){
-    rows=state.dashExpRows;tot=state.dashExpTot;
-  }else{
-    const last=new Date(Date.UTC(+m.slice(0,4),+m.slice(5,7),0)).getUTCDate();
-    try{
-      const d=await api("/api/stats?kind=income&from="+encodeURIComponent(m+"-01")+"&to="+encodeURIComponent(m+"-"+String(last).padStart(2,"0")));
-      if(m!==(state.dashMonth||monthVN()))return; // thang da doi trong luc cho
-      rows=assignPieColors(d.byCategory||[]);tot=d.total||0;
-    }catch(e){rows=[];tot=0;}
-  }
+  const rows=kind==="expense"?state.dashExpRows:state.dashIncRows;
+  const tot=kind==="expense"?state.dashExpTot:state.dashIncTot;
   renderPie($("catPie"),rows,kind==="income"?"Tổng thu":"Tổng chi");
   $("catBreak").innerHTML=rows.length?rows.map(function(x){
     const p=tot?Math.round(Number(x.total)/tot*100):0;
-    return '<div class="catbar click" data-cat="'+escAttr(x.category||"")+'"><span class="nm">'+esc(x.category||"Chưa phân loại")+'</span><span class="tr"><i style="width:'+p+'%;background:'+esc(x.color)+'"></i></span><span class="pc">'+p+'%</span><span style="width:110px;text-align:right">'+fmt(x.total)+'</span></div>';}).join(""):'<p class="muted">Chưa có '+(kind==="income"?"thu nhập":"chi tiêu")+' trong tháng này.</p>';
+    return '<div class="catbar click" data-cat="'+escAttr(x.category||"")+'"><span class="nm">'+esc(x.category||"Chưa phân loại")+'</span><span class="tr"><i style="width:'+p+'%;background:'+esc(x.color)+'"></i></span><span class="pc">'+p+'%</span><span style="width:110px;text-align:right">'+fmt(x.total)+'</span></div>';}).join(""):'<p class="muted">Chưa có '+(kind==="income"?"thu nhập":"chi tiêu")+' trong kỳ này.</p>';
   $("catBreak").querySelectorAll(".catbar.click").forEach(function(el){
     el.onclick=function(){openCatDetail(el.getAttribute("data-cat")||"",kind);};
   });
 }
 /* Chi tiet cac khoan thu/chi cua 1 danh muc trong thang dang xem o Tong quan */
 async function openCatDetail(name,kind){
-  kind=kind||state.dashPieKind||"expense";
+  kind=kind||statState.kind||"expense";
   state.catDetailCtx={src:"dash",name:name,kind:kind};
-  const m=state.dashMonth||monthVN();
-  const lbl=dashMonthLabel(m);
+  const R=dashRange();
+  const lbl=R?R.label:"Toàn bộ thời gian";
   $("catDetailTitle").textContent="🍰 "+(name||"Chưa phân loại");
   $("catDetailTotal").textContent=lbl+" • Đang tải…";
   $("catDetailList").innerHTML="";
   show("catDetailModal",true);
   try{
-    const d=await api("/api/transactions?month="+encodeURIComponent(m));
-    const rows=(d.transactions||[]).filter(function(t){
+    let rows;
+    if(!R){const d=await api("/api/transactions");rows=d.transactions||[];}
+    else{const r=await fetchTxRange(R.from,R.to);rows=r.rows;}
+    rows=rows.filter(function(t){
       return t.kind===kind&&(t.category_name||catName(t.category_id)||"")===name;
     });
     const tot=rows.reduce(function(s,t){return s+Number(t.amount||0);},0);
@@ -1357,7 +1372,7 @@ function renderCatDetailList(rows,name,emptyMsg){
       if(!tx)return;
       if(b.dataset.det==="edit"){show("catDetailModal",false);openTxModal(tx.kind,tx);return;}
       if(!confirm("Xóa giao dịch này?"))return;
-      try{await api("/api/transactions/"+tx.id,{method:"DELETE"});toast("Đã xóa giao dịch");reloadCatDetail();loadTx();loadDashboard();loadStats();}
+      try{await api("/api/transactions/"+tx.id,{method:"DELETE"});toast("Đã xóa giao dịch");reloadCatDetail();loadTx();reloadDashboard();}
       catch(err){toast(err.message);}
     };
   });
@@ -2349,6 +2364,28 @@ function statRange(){
   }
   return null; // summary: toan bo thoi gian
 }
+function dashRange(){ // ky dang chon o Tong quan: null = toan bo thoi gian (Tom luoc)
+  const mode=statState.mode;
+  if(mode==="summary")return null;
+  if(mode==="trend")return trendRange();
+  return statRange();
+}
+function trendRange(){
+  const u=statState.trendUnit;
+  const t=todayVN();
+  if(u==="week"){
+    const d=new Date(t+"T00:00:00Z");d.setUTCDate(d.getUTCDate()-77);
+    const mon=mondayOfISOWeek(isoWeekOf(fmtDateUTC(d)));
+    return {from:fmtDateUTC(mon),to:t,label:"12 tuần gần nhất"};
+  }
+  if(u==="year"){
+    const y=+t.slice(0,4);
+    return {from:(y-4)+"-01-01",to:y+"-12-31",label:"5 năm gần nhất"};
+  }
+  let sy=+t.slice(0,4),sm=+t.slice(5,7)-11;
+  while(sm<1){sm+=12;sy--;}
+  return {from:sy+"-"+String(sm).padStart(2,"0")+"-01",to:t,label:"12 tháng gần nhất"};
+}
 function statListHTML(rows,total){
   if(!rows.length)return '<p class="muted">Chưa có dữ liệu trong kỳ này.</p>';
   return rows.map(function(x){
@@ -2392,7 +2429,6 @@ async function loadStats(){
     show("statKindTabs",mode!=="trend");
     show("statTrendTabs",mode==="trend");
     show("statTrendCard",mode==="trend");
-    show("statSummaryCard",mode==="summary");
     if(mode==="trend"){
       const d=await api("/api/stats/trend?unit="+encodeURIComponent(statState.trendUnit));
       drawLine($("statLine"),d.points||[]);
@@ -2405,34 +2441,22 @@ async function loadStats(){
       $("repPeriodLabel").textContent="12 tháng gần nhất";
       return;
     }
-    const r=statRange();
-    if(mode!=="summary"&&!r){$("statRangeLabel").textContent="Chọn kỳ thống kê.";$("repPeriodLabel").textContent="—";return;}
-    if(mode==="summary"){
-      const inc=await api("/api/stats?kind=income");
-      const exp=await api("/api/stats?kind=expense");
-      const sv=inc.total-exp.total;
-      $("statSummary").innerHTML='<div class="grid3"><div class="kpi"><div class="lbl">Tổng thu</div><div class="val inc">'+fmt(inc.total)+'</div></div><div class="kpi"><div class="lbl">Tổng chi</div><div class="val exp">'+fmt(exp.total)+'</div></div><div class="kpi"><div class="lbl">Tiết kiệm</div><div class="val">'+fmt(sv)+'</div></div></div>';
-      $("statSummary").querySelectorAll(".val").forEach(fitKpi);
-    }
-    const q=r?("?kind="+statState.kind+"&from="+encodeURIComponent(r.from)+"&to="+encodeURIComponent(r.to)):("?kind="+statState.kind);
-    const d=await api("/api/stats"+q);
-    $("statRangeLabel").textContent=(r?r.label:"Toàn bộ thời gian")+" • Tổng "+(statState.kind==="income"?"thu":"chi")+": "+fmt(d.total||0);
-    $("repPeriodLabel").textContent=r?r.label:"Toàn bộ thời gian";
+    // Cac che do khac: nhan ky + ky bao cao do loadDashboard cap nhat (da co so lieu).
   }catch(e){toast(e.message);}
 }
 function bindStats(){
   $("statModes").querySelectorAll("button[data-mode]").forEach(function(b){b.onclick=function(){
     $("statModes").querySelectorAll("button").forEach(function(x){x.classList.remove("on");});
-    b.classList.add("on");statState.mode=b.dataset.mode;loadStats();
+    b.classList.add("on");statState.mode=b.dataset.mode;reloadDashboard();
   };});
-  $("statTabExp").onclick=function(){$("statTabExp").classList.add("on");$("statTabInc").classList.remove("on");statState.kind="expense";loadStats();};
-  $("statTabInc").onclick=function(){$("statTabInc").classList.add("on");$("statTabExp").classList.remove("on");statState.kind="income";loadStats();};
+  $("statTabExp").onclick=function(){setDashKind("expense");};
+  $("statTabInc").onclick=function(){setDashKind("income");};
   $("statTrendTabs").querySelectorAll("button[data-unit]").forEach(function(b){b.onclick=function(){
     $("statTrendTabs").querySelectorAll("button").forEach(function(x){x.classList.remove("on");});
-    b.classList.add("on");statState.trendUnit=b.dataset.unit;loadStats();
+    b.classList.add("on");statState.trendUnit=b.dataset.unit;reloadDashboard();
   };});
   ["statWeek","statMonth","statYear","statFrom","statTo"].forEach(function(id){
-    $(id).addEventListener("change",loadStats);
+    $(id).addEventListener("change",reloadDashboard);
   });
   $("btnMakeReport").onclick=function(){makeReport();};
   $("btnDoPrint").onclick=function(){window.print();};
@@ -2785,9 +2809,8 @@ function bindForms(){
   $("btnSaveTx").onclick=function(){saveTxForm();};
   $("btnAddTxTop").onclick=function(){openTxModal("expense");};
   $("txMonth").addEventListener("change",loadTx);$("txCatFilter").addEventListener("change",loadTx);$("txSearch").addEventListener("input",function(){clearTimeout(this._t);this._t=setTimeout(loadTx,400);});
-  $("dashPrev").onclick=function(){shiftDashMonth(-1);};
-  $("kpiInc").onclick=function(){setDashPieKind("income");};
-  $("kpiExp").onclick=function(){setDashPieKind("expense");};
+  $("kpiInc").onclick=function(){setDashKind("income");};
+  $("kpiExp").onclick=function(){setDashKind("expense");};
   $("btnAddTxToday").onclick=function(){openTxModal("expense");};
   $("todayPrev").onclick=function(){state.todayMonth=shiftMonthStr(state.todayMonth||monthVN(),-1);loadToday();};
   $("todayNext").onclick=function(){state.todayMonth=shiftMonthStr(state.todayMonth||monthVN(),1);loadToday();};
@@ -2797,7 +2820,6 @@ function bindForms(){
   $("btnGoNotes").onclick=function(){go("notes");};
   $("btnAddNote").onclick=function(){addNote();};
   $("btnCancelNote").onclick=function(){cancelEditNote();};
-  $("dashNext").onclick=function(){shiftDashMonth(1);};
   $("btnAddAcc").onclick=async function(){
     if(!$("accName").value.trim())return toast("Nhập tên ví");
     const open=moneyValue($("accOpen"));
@@ -2889,7 +2911,6 @@ function fillYearSelects(){
   const m=monthVN();
   fillYearSelects();
   ["txMonth","budMonth"].forEach(function(id){const el=$(id);if(el)el.value=m;});
-  state.dashMonth=m;
   $("statWeek").value=isoWeekOf(todayVN());
   $("statMonth").value=monthVN();
   $("statYear").value=new Date().getFullYear();
