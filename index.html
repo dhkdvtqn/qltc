@@ -719,8 +719,8 @@ function fmt(n){n=Number(n||0);return new Intl.NumberFormat("vi-VN").format(n)+"
 function fmtBig(v){
   v=Number(v||0);
   if(Math.abs(v)>=1e8){
-    const t=Math.round(Math.abs(v)/1e5)/10; // 1 so thap phan
-    return (v<0?"-":"")+String(t).replace(".",",")+" triệu đ";
+    const t=Math.round(Math.abs(v)/1e4)/100; // 2 so thap phan, lam tron nua len
+    return (v<0?"-":"")+t.toFixed(2).replace(".",",")+" triệu đ";
   }
   return fmt(v);
 }
