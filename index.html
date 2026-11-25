@@ -151,6 +151,7 @@ label{display:block;font-size:14px;font-weight:600;margin:12px 0 6px}
 .desk-only{display:none}
 .piecard>h3{display:none}
 @media (max-width:480px){.grid3{gap:8px}.kpi{padding:10px 8px}}
+@media (max-width:899px){.kpi .val{font-size:13px}} /* so tong nho 30% tren mobile, chong tran vien */
 .inc{color:var(--income)}.exp{color:var(--expense)}
 .bar{height:10px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:8px}
 .bar>i{display:block;height:100%;background:var(--primary);border-radius:99px}
@@ -715,6 +716,14 @@ function saveUser(user){ // luu lai thong tin user vao dung cho da luu token
 function todayVN(){return new Date().toLocaleString("en-CA",{timeZone:"Asia/Ho_Chi_Minh"}).slice(0,10);}
 function monthVN(){return todayVN().slice(0,7);}
 function fmt(n){n=Number(n||0);return new Intl.NumberFormat("vi-VN").format(n)+" đ";}
+function fmtBig(v){
+  v=Number(v||0);
+  if(Math.abs(v)>=1e8){
+    const t=Math.round(Math.abs(v)/1e5)/10; // 1 so thap phan
+    return (v<0?"-":"")+String(t).replace(".",",")+" triệu đ";
+  }
+  return fmt(v);
+}
 function fmtNum(n){return new Intl.NumberFormat("vi-VN").format(Number(n||0));}
 function parseAmount(v){ // chỉ chuẩn hoá chuỗi; số đã gõ dạng 350000 hoặc 350.000 đều về số nguyên đồng
   if(typeof v==="number")return Math.round(v);
@@ -1162,7 +1171,7 @@ function setFCatEditIcon(ic){
 function fitKpi(el){
   if(!el||!el.clientWidth)return;
   el.style.fontSize="";
-  let fs=18;
+  let fs=Math.round(parseFloat(getComputedStyle(el).fontSize))||18;
   while(fs>11&&el.scrollWidth>el.clientWidth){fs--;el.style.fontSize=fs+"px";}
 }
 
@@ -1247,10 +1256,10 @@ async function loadDashboard(){
     $("dashMonthLabel").textContent=lbl;
     const d=await api("/api/dashboard?month="+encodeURIComponent(m)+"&year="+encodeURIComponent(m.slice(0,4)));
     // O "Du" = Thu - Chi trong thang dang xem (khong phai so du luy ke).
-    $("kTotal").textContent=fmt(d.saving);
+    $("kTotal").textContent=fmtBig(d.saving);
     $("kTotal").className="val "+(d.saving>=0?"inc":"exp");
-    $("kInc").textContent=fmt(d.income);
-    $("kExp").textContent=fmt(d.expense);
+    $("kInc").textContent=fmtBig(d.income);
+    $("kExp").textContent=fmtBig(d.expense);
     ["kTotal","kInc","kExp"].forEach(function(id){fitKpi($(id));});
     $("budgetTitle").textContent="🎯 Ngân sách "+lbl.toLowerCase();
     state.dashExpRows=assignPieColors(d.byCategory||[]);
@@ -1916,7 +1925,8 @@ function setTodayTab(tab){
 function renderTodayMonthSum(rows){
   let inc=0,exp=0;
   rows.forEach(function(t){if(t.kind==="income")inc+=t.amount;else if(t.kind==="expense")exp+=t.amount;});
-  $("todayMonthSum").innerHTML='<div class="kpi"><div class="lbl">Thu</div><div class="val inc">'+fmt(inc)+'</div></div><div class="kpi"><div class="lbl">Chi</div><div class="val exp">'+fmt(exp)+'</div></div><div class="kpi"><div class="lbl">Cộng</div><div class="val '+(inc-exp<0?"exp":"inc")+'">'+fmt(inc-exp)+'</div></div>';
+  $("todayMonthSum").innerHTML='<div class="kpi"><div class="lbl">Thu</div><div class="val inc">'+fmtBig(inc)+'</div></div><div class="kpi"><div class="lbl">Chi</div><div class="val exp">'+fmtBig(exp)+'</div></div><div class="kpi"><div class="lbl">Cộng</div><div class="val '+(inc-exp<0?"exp":"inc")+'">'+fmtBig(inc-exp)+'</div></div>';
+  document.querySelectorAll("#todayMonthSum .val").forEach(fitKpi);
 }
 /* Tab Hang ngay: toan bo giao dich cua thang, nhom theo ngay */
 async function loadTodayDaily(){
