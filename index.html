@@ -415,10 +415,19 @@ html{touch-action:pan-x pan-y}
         <div class="kpi kpi-bal"><span class="kic">💰</span><div class="lbl">Dư</div><div class="val" id="kTotal">—</div><div class="cmp" id="kTotCmp"></div></div>
       </div>
       <div class="card piecard"><h3 id="pieCardTitle">Chi tiêu theo danh mục</h3><div class="piewrap"><div id="catPie"></div><div id="catBreak"></div></div><p class="muted" id="pieCardHint" style="margin-top:6px">Bấm vào một hạng mục để xem chi tiết các khoản chi.</p></div>
-      <div class="card budgetcard" id="budgetCard"><h3 id="budgetTitle">🎯 Ngân sách tháng này</h3><div id="budgetDash"></div></div>
+      <div class="card" id="statSummaryCard">
+        <h3>📋 Tóm lược kỳ này</h3>
+        <div id="sumRate"></div>
+        <h4 style="margin:14px 0 6px">Cơ cấu chi tiêu</h4>
+        <div id="sumPareto"></div>
+        <div id="sumBudgetWrap" class="hidden">
+          <h4 style="margin:14px 0 6px" id="sumBudgetTitle">🎯 Ngân sách vs Thực tế</h4>
+          <div id="sumBudget"></div>
+        </div>
+      </div>
       <div class="card flowcard desk-only"><h3>Dòng tiền theo tháng</h3><div id="flowChart"></div></div>
       <div class="card recentcard desk-only"><h3>Giao dịch gần đây</h3><div id="recentTx"></div><button class="linkbtn" id="btnRecentAll" type="button">Xem tất cả giao dịch →</button></div>
-      <div class="card hidden" id="statTrendCard"><h3>📈 Khuynh hướng thu – chi</h3><canvas id="statLine" width="640" height="240"></canvas><p class="muted">■ Thu &nbsp; ■ Chi</p><div id="statTrendList"></div></div>
+      <div class="card hidden" id="statTrendCard"><h3>📈 Khuynh hướng thu – chi</h3><canvas id="statLine" width="640" height="240"></canvas><p class="muted">■ Thu &nbsp; ■ Chi &nbsp; ┄ Chi bình quân 3 kỳ</p><canvas id="statCumLine" width="640" height="180"></canvas><p class="muted" id="statCumLabel">💰 Tiền ròng tích lũy</p><div id="statTrendInsights" style="margin-top:8px"></div><div id="statTrendList" style="margin-top:8px"></div></div>
       <div class="card" id="reportCard"><h3>🖨️ In báo cáo</h3>
         <p class="muted" style="margin:4px 0 8px">Kỳ: <b id="repPeriodLabel">—</b></p>
         <div style="display:flex;gap:12px;flex-wrap:wrap">
@@ -1239,6 +1248,121 @@ function renderRecentTx(list){
     };
   });
 }
+function pct1(v){return (Math.round(Math.abs(v)*10)/10).toString().replace(".",",")+"%";}
+function growTxt(v){if(Math.abs(v)<0.05)return "không đổi";return (v>=0?"tăng ":"giảm ")+pct1(v);}
+function ma3(arr){return arr.map(function(_,i){if(i<2)return null;return (arr[i-2]+arr[i-1]+arr[i])/3;});}
+function consecutive(a,b,unit){
+  if(unit==="year")return (+b)-(+a)===1;
+  if(unit==="week")return (new Date(b+"T00:00:00Z")-new Date(a+"T00:00:00Z"))===7*864e5;
+  const pa=a.split("-").map(Number),pb=b.split("-").map(Number);
+  return (pb[0]*12+pb[1])-(pa[0]*12+pa[1])===1;
+}
+function drawCumLine(cv,vals,labels){
+  if(!cv)return;const ctx=cv.getContext("2d");
+  ctx.clearRect(0,0,cv.width,cv.height);
+  if(!vals.length){ctx.fillStyle="#64748B";ctx.font="14px sans-serif";ctx.fillText("Chưa có dữ liệu.",10,30);return;}
+  const max=Math.max.apply(null,vals.concat([1])),min=Math.min.apply(null,vals.concat([0]));
+  const L=46,R=10,T=14,B=26,W=cv.width-L-R,H=cv.height-T-B;
+  ctx.strokeStyle="#E2E8F0";ctx.lineWidth=1;
+  for(let g=0;g<=4;g++){const y=T+H-g*H/4;ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(L+W,y);ctx.stroke();}
+  function xy(i,v){return [L+i*(W/Math.max(vals.length-1,1)),T+H-((v-min)/((max-min)||1))*H];}
+  ctx.strokeStyle="#2563EB";ctx.lineWidth=2;ctx.beginPath();
+  vals.forEach(function(v,i){const p=xy(i,v);if(i===0)ctx.moveTo(p[0],p[1]);else ctx.lineTo(p[0],p[1]);});
+  ctx.stroke();
+  ctx.fillStyle="#2563EB";
+  vals.forEach(function(v,i){const p=xy(i,v);ctx.beginPath();ctx.arc(p[0],p[1],3,0,Math.PI*2);ctx.fill();});
+  ctx.fillStyle="#64748B";ctx.font="11px sans-serif";
+  labels.forEach(function(lb,i){ctx.fillText(lb,L+i*(W/Math.max(vals.length-1,1))-14,cv.height-8);});
+}
+/* Bao cao Tom luoc (goc nhin tinh cua ky dang chon): ty le tiet kiem, Pareto,
+   Ngan sach vs Thuc te (chi che do Thang, vi ngan sach tinh theo thang). */
+function renderSummary(inc,exp,budgets,mode,monthLbl){
+  const rateEl=$("sumRate");
+  if(!inc){
+    rateEl.innerHTML='<p class="muted">Chưa có thu nhập trong kỳ này nên chưa tính được tỷ lệ tiết kiệm.</p>';
+  }else{
+    const r=(inc-exp)/inc*100;
+    const vd=r>=20?["Tốt, vượt chuẩn 20%","inc"]:r>=15?["Đạt chuẩn tối thiểu 15–20%","inc"]:r>=0?["Thấp, dưới chuẩn tối thiểu 15%","exp"]:["Âm — chi vượt thu","exp"];
+    rateEl.innerHTML='<div class="row"><b style="flex:1">Tỷ lệ tiết kiệm</b><b class="'+vd[1]+'" style="font-size:18px">'+pct1(r)+'</b></div><p class="muted" style="margin:4px 0 0">'+vd[0]+' • Chuẩn tối thiểu 15–20% • Tiết kiệm ròng '+fmt(inc-exp)+'</p>';
+  }
+  const rows=state.dashExpRows.slice().sort(function(a,b){return Number(b.total||0)-Number(a.total||0);});
+  const tot=state.dashExpTot||0;
+  const pe=$("sumPareto");
+  if(!tot){
+    pe.innerHTML='<p class="muted">Chưa có chi tiêu trong kỳ này.</p>';
+  }else{
+    let cum=0,k80=0,cum80=0;
+    rows.forEach(function(x,i){cum+=Number(x.total||0)/tot*100;if(!k80&&cum>=80){k80=i+1;cum80=cum;}});
+    const top=rows.slice(0,5);
+    const html=top.map(function(x){
+      const p=Number(x.total||0)/tot*100;
+      return '<div style="margin-bottom:10px"><div class="row"><b style="flex:1">'+esc(x.category||"Chưa phân loại")+'</b><span>'+fmt(x.total)+' • '+pct1(p)+'</span></div><div class="bar"><i style="width:'+Math.min(Math.round(p),100)+'%;background:'+esc(x.color||"#64748B")+'"></i></div></div>';
+    }).join("");
+    const rem=rows.slice(5);
+    const remTot=rem.reduce(function(s2,x){return s2+Number(x.total||0);},0);
+    pe.innerHTML=html+(rem.length?'<p class="muted">…và '+rem.length+' danh mục khác ('+fmt(remTot)+' • '+pct1(remTot/tot*100)+')</p>':'')+'<p style="margin-top:6px"><b>'+k80+' danh mục đầu chiếm '+Math.round(cum80)+'% tổng chi</b> — tập trung cắt giảm ở đây hiệu quả nhất.</p>';
+  }
+  show("sumBudgetWrap",mode==="month");
+  if(mode==="month"){
+    $("sumBudgetTitle").textContent="🎯 Ngân sách vs Thực tế — "+monthLbl.toLowerCase();
+    const bs=budgets||[];
+    if(!bs.length){
+      $("sumBudget").innerHTML='<p class="muted">Chưa đặt ngân sách tháng này. Vào mục Ngân sách để đặt.</p>';
+    }else{
+      let over=0;
+      $("sumBudget").innerHTML=bs.map(function(b){
+        const p=b.limit_amount?Math.round(b.spent/b.limit_amount*100):0;
+        const cls=b.spent>b.limit_amount?"over":(p>=80?"warn":"");
+        const tag=b.spent>b.limit_amount?'<span style="color:#DC2626">⚠️ Vượt '+fmt(b.spent-b.limit_amount)+'</span>':p>=80?'<span style="color:#D97706">Sắp vượt</span>':'<span class="muted">Trong hạn mức</span>';
+        if(b.spent>b.limit_amount)over++;
+        return '<div style="margin-bottom:12px"><div class="row"><b style="flex:1">'+esc(b.category_name)+'</b>'+tag+'</div><div class="row"><span class="muted">'+fmt(b.spent)+' / '+fmt(b.limit_amount)+' ('+p+'%)</span></div><div class="bar '+cls+'"><i style="width:'+Math.min(p,100)+'%"></i></div></div>';
+      }).join("")+(over?'<p style="color:#DC2626"><b>'+over+' danh mục đang vượt hạn mức</b> — xem lại trước khi kỳ kết thúc.</p>':'<p class="muted">Tất cả danh mục đang trong hạn mức.</p>');
+    }
+  }
+}
+/* Nhan dinh xu huong: lam phat loi song, dinh chi mua vu, ro ri (trung binh dong),
+   YoY (chi che do Thang, lay thang cung ky nam ngoai qua /api/stats). */
+async function trendInsights(pts,unit){
+  if(pts.length<2)return '<p class="muted">Cần ít nhất 2 kỳ có số liệu để nhận xét xu hướng.</p>';
+  const first=pts[0],last=pts[pts.length-1];
+  const lines=[];
+  if(first.income>0){
+    const ig=(last.income-first.income)/first.income*100;
+    const eg=first.expense?((last.expense-first.expense)/first.expense*100):0;
+    const rF=(first.income-first.expense)/first.income*100;
+    const rL=last.income?((last.income-last.expense)/last.income*100):0;
+    if(eg>ig)lines.push('<p>⚠️ <b>Lạm phát lối sống:</b> Thu '+growTxt(ig)+' nhưng Chi '+growTxt(eg)+' — tỷ lệ tiết kiệm thu hẹp từ '+pct1(rF)+' xuống '+pct1(rL)+'.</p>');
+    else lines.push('<p>✅ <b>Chi tăng chậm hơn Thu</b> ('+growTxt(eg)+' so với '+growTxt(ig)+') — tỷ lệ tiết kiệm mở rộng từ '+pct1(rF)+' lên '+pct1(rL)+'.</p>');
+  }
+  const avgExp=pts.reduce(function(s,r){return s+Number(r.expense||0);},0)/pts.length;
+  let peak=pts[0];pts.forEach(function(r){if(r.expense>peak.expense)peak=r;});
+  if(avgExp>0&&peak.expense>avgExp*1.2){
+    lines.push('<p>📅 <b>Đỉnh chi: '+trendLabel(peak.label)+'</b> — '+fmt(peak.expense)+', cao hơn chi bình quân '+fmt(Math.round(avgExp))+' khoảng '+pct1((peak.expense/avgExp-1)*100)+'. Nên lập quỹ dự phòng cho các tháng cao điểm.</p>');
+  }
+  const ma=ma3(pts.map(function(r){return Number(r.expense||0);}));
+  const maVals=ma.filter(function(v){return v!=null;});
+  if(maVals.length>=2){
+    const a=maVals[0],b=maVals[maVals.length-1];
+    if(b>a)lines.push('<p>💧 <b>Chi bình quân 3 kỳ</b> tăng từ '+fmt(Math.round(a))+' lên '+fmt(Math.round(b))+' (+'+pct1((b/a-1)*100)+') — các khoản nhỏ đang nhích dần đều, nên rà soát lại.</p>');
+  }
+  if(unit==="month"){
+    const lbl=last.label;
+    const y=+lbl.slice(0,4)-1,m=lbl.slice(5,7);
+    const lastDay=new Date(Date.UTC(y,+m,0)).getUTCDate();
+    const from=y+"-"+m+"-01",to=y+"-"+m+"-"+String(lastDay).padStart(2,"0");
+    try{
+      const res=await Promise.all([api("/api/stats?kind=income&from="+encodeURIComponent(from)+"&to="+encodeURIComponent(to)),api("/api/stats?kind=expense&from="+encodeURIComponent(from)+"&to="+encodeURIComponent(to))]);
+      const pi=res[0].total||0,pe=res[1].total||0;
+      if(pi||pe){
+        const parts=[];
+        if(pi)parts.push("Thu "+(last.income>=pi?"▲ +":"▼ −")+pct1((last.income-pi)/pi*100));
+        if(pe)parts.push("Chi "+(last.expense>=pe?"▲ +":"▼ −")+pct1((last.expense-pe)/pe*100));
+        lines.push('<p>📊 <b>So với cùng kỳ năm ngoái ('+trendLabel(from.slice(0,7))+'):</b> '+parts.join(" • ")+'.</p>');
+      }else lines.push('<p class="muted">Không có số liệu cùng kỳ năm ngoái để so sánh.</p>');
+    }catch(e){/* bo qua YoY khi loi */}
+  }
+  return lines.length?lines.join(""):'<p class="muted">Chưa đủ dữ liệu để nhận xét xu hướng.</p>';
+}
 function reloadDashboard(){loadDashboard();loadStats();}
 async function loadDashboard(){
   try{
@@ -1274,13 +1398,8 @@ async function loadDashboard(){
     // Ngan sach / so sanh thang truoc: chi co nghia o che do Thang.
     const m=mode==="month"?($("statMonth").value||monthVN()):monthVN();
     const d=await api("/api/dashboard?month="+encodeURIComponent(m)+"&year="+encodeURIComponent(m.slice(0,4)));
-    show("budgetCard",mode==="month");
+    renderSummary(inc,exp,d.budgets||[],mode,dashMonthLabel(m));
     if(mode==="month"){
-      $("budgetTitle").textContent="🎯 Ngân sách "+dashMonthLabel(m).toLowerCase();
-      $("budgetDash").innerHTML=(d.budgets||[]).length?(d.budgets||[]).map(function(b){
-        const p=b.limit_amount?Math.round(b.spent/b.limit_amount*100):0;
-        const cls=p>=100?"over":(p>=80?"warn":"");
-        return '<div style="margin-bottom:12px"><div class="row"><b style="flex:1">'+esc(b.category_name)+'</b><span>'+fmt(b.spent)+' / '+fmt(b.limit_amount)+' ('+p+'%)</span></div><div class="bar '+cls+'"><i style="width:'+Math.min(p,100)+'%"></i></div></div>';}).join(""):'<p class="muted">Chưa đặt ngân sách tháng này. Vào mục Ngân sách để đặt.</p>';
       setCmp($("kIncCmp"),inc,d.prevIncome||0,true);
       setCmp($("kExpCmp"),exp,d.prevExpense||0,false);
       const prevSaving=(d.prevIncome||0)-(d.prevExpense||0);
@@ -2398,7 +2517,7 @@ function trendLabel(l){
   if(/^\d{4}-\d{2}-\d{2}$/.test(l))return l.slice(8)+"/"+l.slice(5,7);
   return l;
 }
-function drawLine(cv,points){
+function drawLine(cv,points,ma){
   if(!cv)return;const ctx=cv.getContext("2d");
   ctx.clearRect(0,0,cv.width,cv.height);
   const rows=points||[];
@@ -2416,6 +2535,12 @@ function drawLine(cv,points){
     rows.forEach(function(r,i){const p=xy(i,r[key]);ctx.beginPath();ctx.arc(p[0],p[1],3,0,Math.PI*2);ctx.fill();});
   }
   line("income","#16A34A");line("expense","#DC2626");
+  if(ma&&ma.length){
+    ctx.strokeStyle="#F59E0B";ctx.lineWidth=2;ctx.setLineDash([6,4]);ctx.beginPath();
+    let started=false;
+    rows.forEach(function(r,i){if(ma[i]==null)return;const p=xy(i,ma[i]);if(!started){ctx.moveTo(p[0],p[1]);started=true;}else ctx.lineTo(p[0],p[1]);});
+    ctx.stroke();ctx.setLineDash([]);
+  }
   ctx.fillStyle="#64748B";ctx.font="11px sans-serif";
   rows.forEach(function(r,i){ctx.fillText(trendLabel(r.label),L+i*(W/Math.max(rows.length-1,1))-14,cv.height-8);});
 }
@@ -2429,15 +2554,29 @@ async function loadStats(){
     show("statKindTabs",mode!=="trend");
     show("statTrendTabs",mode==="trend");
     show("statTrendCard",mode==="trend");
+    show("statSummaryCard",mode!=="trend");
     if(mode==="trend"){
-      const d=await api("/api/stats/trend?unit="+encodeURIComponent(statState.trendUnit));
-      drawLine($("statLine"),d.points||[]);
-      const pts=d.points||[];
-      $("statTrendList").innerHTML=pts.length?pts.slice().reverse().map(function(r){
-        const lbl=statState.trendUnit==="week"?("Tuần từ "+trendLabel(r.label)):trendLabel(r.label);
-        return '<div class="list-item"><div class="mid"><div class="t">'+esc(lbl)+'</div><div class="s">Thu '+fmt(r.income)+' • Chi '+fmt(r.expense)+'</div></div><div class="amt">'+fmt(r.income-r.expense)+'</div></div>';
+      const unit=statState.trendUnit;
+      const d=await api("/api/stats/trend?unit="+encodeURIComponent(unit));
+      const pts=(d.points||[]).slice();
+      const ma=ma3(pts.map(function(r){return Number(r.expense||0);}));
+      drawLine($("statLine"),pts,ma);
+      const cum=[];let run=0;
+      pts.forEach(function(r){run+=Number(r.income||0)-Number(r.expense||0);cum.push(run);});
+      drawCumLine($("statCumLine"),cum,pts.map(function(r){return trendLabel(r.label);}));
+      $("statCumLabel").textContent=cum.length?("💰 Tiền ròng tích lũy đến "+trendLabel(pts[pts.length-1].label)+": "+fmt(cum[cum.length-1])):"💰 Tiền ròng tích lũy";
+      $("statTrendList").innerHTML=pts.length?pts.slice().reverse().map(function(r,ri){
+        const i=pts.length-1-ri;
+        const lbl=unit==="week"?("Tuần từ "+trendLabel(r.label)):trendLabel(r.label);
+        let mom="";
+        if(i>0&&consecutive(pts[i-1].label,r.label,unit)&&pts[i-1].expense){
+          const ch=(r.expense-pts[i-1].expense)/pts[i-1].expense*100;
+          mom='<div class="s">Chi '+(ch>=0?"▲ +":"▼ −")+pct1(ch)+' so với kỳ trước</div>';
+        }
+        return '<div class="list-item"><div class="mid"><div class="t">'+esc(lbl)+'</div><div class="s">Thu '+fmt(r.income)+' • Chi '+fmt(r.expense)+'</div>'+mom+'</div><div class="amt">'+fmt(r.income-r.expense)+'</div></div>';
       }).join(""):'<p class="muted">Chưa có dữ liệu.</p>';
-      $("statRangeLabel").textContent="Khuynh hướng • "+(statState.trendUnit==="week"?"12 tuần gần nhất":statState.trendUnit==="year"?"5 năm gần nhất":"12 tháng gần nhất");
+      $("statTrendInsights").innerHTML=await trendInsights(pts,unit);
+      $("statRangeLabel").textContent="Khuynh hướng • "+(unit==="week"?"12 tuần gần nhất":unit==="year"?"5 năm gần nhất":"12 tháng gần nhất");
       $("repPeriodLabel").textContent="12 tháng gần nhất";
       return;
     }
