@@ -194,6 +194,11 @@ label{display:block;font-size:14px;font-weight:600;margin:12px 0 6px}
 .minitabs{display:flex;gap:4px;margin-top:8px}
 .minitabs button{flex:1;min-height:34px;padding:5px 2px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:12px;font-weight:600;line-height:1.25}
 .minitabs button.on{background:var(--primary);border-color:var(--primary);color:#fff}
+/* Tieu de the Ky xem bao cao + dropdown chon ky o goc phai tren cung */
+.stat-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.stat-head h3{flex:1;min-width:0;margin:0}
+#statModeSel{flex:0 0 auto;width:auto;max-width:190px;min-height:40px;font-size:14px;font-weight:600;padding:6px 8px;border-radius:10px}
+@media (max-width:899px){#statModeSel{max-width:160px;font-size:13px}}
 .seg button{flex:1 1 28%;min-height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);font-weight:700;font-size:15px}
 .seg button.on{background:var(--primary);border-color:var(--primary);color:#fff}
 .linkbtn{background:none;border:0;color:var(--primary);font-weight:600;padding:8px 0;text-align:left}
@@ -395,14 +400,16 @@ html{touch-action:pan-x pan-y}
     <div class="topbar"><div class="brand">💰 MyMoney</div><div class="who" id="whoBox"></div></div>
     <section id="view-dashboard" class="view">
       <div class="card" id="statCard">
-        <h3>📊 Kỳ xem báo cáo</h3>
-        <div class="minitabs" id="statModes">
-          <button type="button" data-mode="week">Tuần</button>
-          <button type="button" data-mode="month" class="on">Tháng</button>
-          <button type="button" data-mode="year">Năm</button>
-          <button type="button" data-mode="period">Period</button>
-          <button type="button" data-mode="summary">Tóm lược</button>
-          <button type="button" data-mode="trend">Khuynh hướng</button>
+        <div class="stat-head">
+          <h3>📊 Kỳ xem báo cáo</h3>
+          <select id="statModeSel" aria-label="Kỳ xem báo cáo">
+            <option value="week">Tuần</option>
+            <option value="month" selected>Tháng</option>
+            <option value="year">Năm</option>
+            <option value="period">Period</option>
+            <option value="summary">Tóm lược</option>
+            <option value="trend">Khuynh hướng</option>
+          </select>
         </div>
         <div class="minitabs" id="statKindTabs">
           <button type="button" id="statTabExp" class="on">Chi</button>
@@ -2605,10 +2612,7 @@ async function loadStats(){
   }catch(e){toast(e.message);}
 }
 function bindStats(){
-  $("statModes").querySelectorAll("button[data-mode]").forEach(function(b){b.onclick=function(){
-    $("statModes").querySelectorAll("button").forEach(function(x){x.classList.remove("on");});
-    b.classList.add("on");statState.mode=b.dataset.mode;reloadDashboard();
-  };});
+  $("statModeSel").addEventListener("change",function(){statState.mode=this.value;reloadDashboard();});
   $("statTabExp").onclick=function(){setDashKind("expense");};
   $("statTabInc").onclick=function(){setDashKind("income");};
   $("statTrendTabs").querySelectorAll("button[data-unit]").forEach(function(b){b.onclick=function(){
