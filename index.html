@@ -2049,7 +2049,7 @@ async function loadToday(){
   refreshTodayIco();
   state.todayMonth=state.todayMonth||monthVN();
   $("todayMonthLabel").textContent="Tháng "+(+state.todayMonth.slice(5))+"/"+state.todayMonth.slice(0,4);
-  $("todayNext").disabled=state.todayMonth>=monthVN();
+  /* Dieu huong thang mo: tien/lui toi thang nao cung duoc ke ca thang tuong lai */
   setTodayTab(state.todayTab||"daily");
 }
 function setTodayTab(tab){
@@ -2146,7 +2146,7 @@ async function loadTodayMonths(){
   const y=state.todayYear||new Date().getFullYear();
   state.todayYear=y;
   $("todayYearLabel").textContent=y;
-  $("todayYearNext").disabled=y>=new Date().getFullYear();
+  /* Dieu huong nam mo: xem nam nao cung duoc ke ca nam tuong lai */
   $("todayMonths").innerHTML='<p class="muted">Đang tải…</p>';
   try{
     const d=await api("/api/dashboard?year="+y);
